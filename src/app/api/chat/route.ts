@@ -49,7 +49,6 @@ export async function POST(req: Request) {
       chatHistory
     );
 
-console.log(intent)
     /* ---------------------------
        Build Mongo query
     ---------------------------- */

@@ -15,7 +15,7 @@ export default async function page() {
        return (
       <div className="space-y-6 w-full min-h-screen flex items-center justify-center">
         <div className="w-1/2 fit py-10 bg-card rounded-2xl flex items-center justify-center">
-        <p className="text-muted-foreground">There us no data</p>
+        <p className="text-muted-foreground">There is no data</p>
 
         </div>
       
