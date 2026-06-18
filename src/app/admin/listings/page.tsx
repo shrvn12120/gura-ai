@@ -3,7 +3,7 @@ import connectDB from "@/lib/mongodb";
 import Listing from "@/models/listing.model";
 
 
-export default async function ListingsPage() {
+export default async function page() {
   await connectDB();
 
   const listings = await Listing.find()
