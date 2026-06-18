@@ -1,6 +1,7 @@
 import ListingsTable from "@/components/list-table";
 import connectDB from "@/lib/mongodb";
 import Listing from "@/models/listing.model";
+import { notFound } from "next/navigation";
 
 
 export default async function page() {
@@ -9,6 +10,20 @@ export default async function page() {
   const listings = await Listing.find()
     .sort({ createdAt: -1 })
     .lean();
+
+    if(!listings){
+       return (
+      <div className="space-y-6 w-full min-h-screen flex items-center justify-center">
+        <div className="w-1/2 fit py-10 bg-card rounded-2xl flex items-center justify-center">
+        <p className="text-muted-foreground">There us no data</p>
+
+        </div>
+      
+
+      
+    </div>
+       )
+    }
 
   const data = JSON.parse(JSON.stringify(listings));
 
