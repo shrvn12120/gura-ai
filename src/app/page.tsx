@@ -1,65 +1,445 @@
-import Image from "next/image";
 
-export default function Home() {
+
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
+import { MapPinAreaIcon, RocketLaunchIcon } from "@phosphor-icons/react";
+import { toast } from "sonner";
+import Link from "next/link";
+import { Separator } from "@/components/ui/separator";
+
+/* ---------------- TYPES ---------------- */
+
+type AIUI = {
+  type?: "place" | "activity" | "list" | "info";
+  requestLocation: boolean
+  title?: string;
+  description?: string;
+
+  categories?: string[];
+
+  location?: {
+    name: string;
+    lat: number;
+    lng: number;
+  };
+
+
+
+  links?: {
+    website?: string;
+    facebook?: string;
+    instagram?: string;
+  };
+
+  shareLocation?: {
+    lat?: number;
+    lng?: number;
+  };
+
+  actions?: {
+    type:
+      | "map"
+      | "link"
+      | "whatsapp"
+      | "booking"
+      | "call"
+      | "email"
+      | "share-location"
+      |"location-navigation";
+    label: string;
+    url?: string;
+  }[];
+  options?:{
+name: string
+description: string
+contact: {
+  phone: string,
+  whatsapp: string
+}
+  }[],
+
+  markdown?: string;
+};
+
+type Message = {
+  role: "user" | "assistant";
+  content: string;
+  ui?: AIUI | null;
+};
+
+/* ---------------- PAGE ---------------- */
+
+export default function AIChatPage() {
+  const [messages, setMessages] = useState<Message[]>([]);
+
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const bottomRef = useRef<HTMLDivElement | null>(null);
+
+  async function sendMessage(text?: string) {
+   const messageText = text ?? input;
+
+  if (!messageText.trim() || loading) return;
+
+    const userMessage = messageText;
+
+    // add user message immediately
+    setMessages((prev) => [
+      ...prev,
+      { role: "user", content: userMessage },
+    ]);
+
+    setInput("");
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: userMessage,
+          conversation: messages,
+          island: "Guraidhoo",
+        }),
+      });
+
+      const data = await res.json();
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: data.message,
+          ui: data.ui || null,
+        },
+      ]);
+    } catch (err) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: "⚠️ Something went wrong. Please try again.",
+          ui: null,
+        },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, loading]);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="h-screen flex flex-col bg-background">
+
+      {/* HEADER */}
+      <div className="border-b p-4">
+        <div className="max-w-3xl mx-auto flex items-center justify-between">
+          <div>
+            <h1 className="text-lg font-bold">Guraidhoo AI Assistant</h1>
+            <p className="text-sm text-muted-foreground">
+              Ask anything about the island
+            </p>
+          </div>
+          <Badge variant="secondary">AI Beta</Badge>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      </div>
+
+      {/* QUICK ACTIONS */}
+      <div className="border-b p-3">
+        <div className="max-w-3xl mx-auto flex gap-2 overflow-x-auto">
+          <Button variant="outline" size="sm" onClick={() => setInput("Cheap guesthouses")}>
+            Cheap rooms
+          </Button>
+
+          <Button variant="outline" size="sm" onClick={() => setInput("Bike rentals")}>
+            Rentals
+          </Button>
+
+          <Button variant="outline" size="sm" onClick={() => setInput("Things to do")}>
+            Activities
+          </Button>
+
+          <Button variant="outline" size="sm" onClick={() => setInput("Restaurants")}>
+            Food
+          </Button>
         </div>
-      </main>
+      </div>
+
+      {/* CHAT AREA */}
+      <ScrollArea className="flex-1 p-4 h-72">
+        <div className="max-w-3xl mx-auto space-y-3">
+          {messages.length < 1?
+          <div className="w-full min-h-72 flex flex-col items-center justify-center text-center px-6">
+  <h1 className="text-2xl font-bold mb-3">
+    👋 Welcome to Guraidhoo!
+  </h1>
+
+  <p className="max-w-xl text-sm text-muted-foreground leading-7">
+    I'm here to help you discover places to stay, restaurants,
+    activities, transport, and local attractions around the island.
+  </p>
+
+  <div className="mt-6 space-y-2 text-sm">
+    <p className="font-medium">Try asking:</p>
+
+    <div className="flex flex-col gap-2 text-muted-foreground">
+      <span>🏨 "Show me guesthouses"</span>
+      <span>🍽️ "Where can I eat?"</span>
+      <span>🤿 "What activities are available?"</span>
+      <span>🚲 "Can I rent a bike?"</span>
+      <span>📍 "How do I get to Bikini Beach?"</span>
+    </div>
+  </div>
+
+  <p className="mt-6 text-sm font-medium">
+    What would you like to explore today?
+  </p>
+</div>
+          :
+          <>
+           {messages?.map((msg, i) => (
+            <ChatBubble onLocationClick={((e)=>{
+                  sendMessage(e);
+            
+            })} key={i} message={msg} />
+          ))}
+          </>
+          }
+         
+
+          {/* LOADING */}
+          {loading && (
+            <div className="flex justify-start">
+              <Card className="p-3 text-sm text-muted-foreground animate-pulse">
+                Thinking...
+              </Card>
+            </div>
+          )}
+
+          <div ref={bottomRef} />
+        </div>
+      </ScrollArea>
+
+      {/* INPUT */}
+      <div className="border-t p-4 bg-background">
+        <div className="max-w-3xl mx-auto flex gap-2">
+          <Input
+            value={input}
+            placeholder="Ask about accommodation, food, rentals..."
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") sendMessage();
+            }}
+            disabled={loading}
+          />
+
+          <Button onClick={(()=> sendMessage())} disabled={loading}>
+            {loading ? "Sending..." : "Send"}
+            <RocketLaunchIcon className="ml-2" />
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ---------------- CHAT BUBBLE ---------------- */
+
+function ChatBubble({
+  message,
+  onLocationClick,
+}: {
+  message: Message;
+  onLocationClick: (text: string) =>  void;
+}) {
+  const isUser = message.role === "user";
+
+  return (
+     <div className={`flex  ${isUser ? "justify-end" : "justify-start"}`}>
+ 
+      <Card
+        className={`p-3 max-w-[75%] text-sm space-y-3 ${
+          isUser ? "bg-black text-white" : ""
+        }`}
+      >
+        {/* USER MESSAGE */}
+        {isUser && <div>{message.content}</div>}
+
+        {/* ASSISTANT */}
+        {!isUser && (
+          <div className="space-y-3">
+            {message.content && (<>
+            <p>{message.content}</p>
+<Separator /></>)}
+
+            {/* TITLE */}
+            {message.ui?.title && (
+              <h2 className="font-bold text-base">
+                {message.ui.title}
+              </h2>
+            )}
+
+            {
+              message?.ui?.options && message.ui.options?.length> 1 && message.ui.options.map((option, i)=>(
+                <div key={i} className="flex flex-col">
+                  <Separator className="my-2"/>
+                  <p className="">{option?.name}</p>
+                  <small className="text-muted-foreground my-2">
+                    {option?.description}
+                  </small>
+                
+                  {option?.contact?.phone &&(<Link className="my-1 hover:underline" href={`tel:${option?.contact?.phone}`}>Call: {option?.contact?.phone.split("+960")}</Link>)}
+
+
+                  {option?.contact?.whatsapp &&(<Link className="my-1 hover:underline" href={`https://wa.me/${option?.contact?.whatsapp}`}>WhatsApp: {option?.contact?.whatsapp.split("+960")}</Link>)}
+
+
+                </div>
+              ))
+            }
+
+            {/* DESCRIPTION */}
+            {message.ui?.description && (
+              <p className="text-muted-foreground">
+                {message.ui.description}
+              </p>
+            )}
+
+            {/* CATEGORIES */}
+            {message.ui?.categories && (
+              <div className="flex flex-wrap gap-2">
+                {message.ui.categories.map((c) => (
+                  <Badge key={c} variant="secondary">
+                    {c}
+                  </Badge>
+                ))}
+              </div>
+            )}
+
+            {/* LOCATION MAP */}
+            
+            {
+              message.ui?.requestLocation && (
+                <>
+               
+                 <Button
+  onClick={async () => {
+    try {
+      const permission = await navigator.permissions.query({
+        name: "geolocation",
+      });
+
+      if (permission.state === "denied") {
+        toast.error(
+          "Location access is blocked. Please enable it in your browser settings."
+        );
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+
+          onLocationClick(`My location is ${lat},${lng}`);
+        },
+        (error) => {
+          toast.error("Unable to get location");
+        },
+        {
+          enableHighAccuracy: true,
+        }
+      );
+    } catch (error) {
+      console.error(error);
+      toast.error("Location permission check failed");
+    }
+  }}
+>
+  Share Location <MapPinAreaIcon />
+                </Button>
+                </>
+               
+              )
+            }
+
+
+            {/* LINKS SECTION */}
+            {message.ui?.links && (
+              <div className="flex flex-wrap gap-2">
+
+                {message.ui.links.website && (
+                  <a href={message.ui.links.website} target="_blank">
+                    <Button size="sm" variant="secondary">
+                      🌐 Website
+                    </Button>
+                  </a>
+                )}
+
+                {message.ui.links.facebook && (
+                  <a href={message.ui.links.facebook} target="_blank">
+                    <Button size="sm" variant="secondary">
+                      📘 Facebook
+                    </Button>
+                  </a>
+                )}
+
+                {message.ui.links.instagram && (
+                  <a href={message.ui.links.instagram} target="_blank">
+                    <Button size="sm" variant="secondary">
+                      📸 Instagram
+                    </Button>
+                  </a>
+                )}
+
+              </div>
+            )}
+
+            {/* ACTIONS (generic buttons) */}
+            {
+            
+            !message.ui?.requestLocation && (
+            <>
+            {
+              message.ui?.actions?.map((a, i) => (
+              
+                <Button asChild key={i} size="sm" variant="outline" className="mr-2 mt-2">
+                  <Link  href={a.url || ""} target="_blank">
+                  {a.label}
+                  </Link>
+                </Button>
+              
+            ))
+            }
+            </>)
+            
+            }
+
+            {/* MARKDOWN fallback */}
+            {message.ui?.markdown && (
+              <pre className="whitespace-pre-wrap text-sm text-muted-foreground">
+                {message.ui.markdown} 
+              </pre>
+            )}
+
+            {/* TEXT fallback */}
+            
+          </div>
+          
+        )}
+      </Card>
     </div>
   );
 }
