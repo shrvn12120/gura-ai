@@ -29,13 +29,13 @@ type Listing = {
 export default function ListingsTable({
   listings,
 }: {
-  listings: Listing[];
+  listings?: Listing[];
 }) {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
 
   const filtered = useMemo(() => {
-    return listings.filter((listing) => {
+    return listings?.filter((listing) => {
       const matchesSearch =
         listing.name
           .toLowerCase()
@@ -105,7 +105,7 @@ export default function ListingsTable({
           </TableHeader>
 
           <TableBody>
-            {filtered.length === 0 ? (
+            {filtered?.length === 0 ? (
               <TableRow>
                 <TableCell
                   colSpan={5}
@@ -115,7 +115,7 @@ export default function ListingsTable({
                 </TableCell>
               </TableRow>
             ) : (
-              filtered.map((listing) => (
+              filtered?.map((listing) => (
                 <TableRow key={listing._id}>
                   <TableCell className="font-medium">
                     {listing.name}
@@ -166,7 +166,7 @@ export default function ListingsTable({
       </div>
 
       <p className="text-sm text-muted-foreground">
-        {filtered.length} listing(s)
+        {filtered?.length} listing(s)
       </p>
     </div>
   );
