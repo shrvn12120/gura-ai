@@ -181,12 +181,12 @@ export default function AIChatPage() {
       <ScrollArea className="flex-1 p-4 h-72">
         <div className="max-w-3xl mx-auto space-y-3">
           {messages.length < 1?
-          <div className="w-full min-h-72 flex flex-col items-center justify-center text-center px-6">
+          <div className="w-full min-h-130 flex flex-col items-center justify-center text-center px-6">
   <h1 className="text-2xl font-bold mb-3">
     👋 Welcome to Guraidhoo!
   </h1>
 
-  <p className="max-w-xl text-sm text-muted-foreground leading-7">
+  <p className="max-w-xl text-sm text-muted-foreground leading-7 my-8">
     I'm here to help you discover places to stay, restaurants,
     activities, transport, and local attractions around the island.
   </p>
@@ -195,11 +195,11 @@ export default function AIChatPage() {
     <p className="font-medium">Try asking:</p>
 
     <div className="flex flex-col gap-2 text-muted-foreground">
-      <span>🏨 "Show me guesthouses"</span>
-      <span>🍽️ "Where can I eat?"</span>
-      <span>🤿 "What activities are available?"</span>
-      <span>🚲 "Can I rent a bike?"</span>
-      <span>📍 "How do I get to Bikini Beach?"</span>
+      <span className=" cursor-pointer" onClick={(()=> sendMessage("Show me guesthouses"))}>🏨 "Show me guesthouses"</span>
+      <span className=" cursor-pointer" onClick={(()=> sendMessage("Where can I eat?"))}>🍽️ "Where can I eat?"</span>
+      <span className=" cursor-pointer" onClick={(()=> sendMessage("What activities are available?"))}>🤿 "What activities are available?"</span>
+      <span className=" cursor-pointer" onClick={(()=> sendMessage("Can I rent a bike?"))}>🚲 "Can I rent a bike?"</span>
+      <span className=" cursor-pointer" onClick={(()=> sendMessage("How do I get to Bikini Beach?"))}>📍 "How do I get to Bikini Beach?"</span>
     </div>
   </div>
 
