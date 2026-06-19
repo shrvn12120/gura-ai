@@ -129,3 +129,24 @@
     @apply font-serif;
   }
 }
+
+@keyframes slide {
+  from {
+    transform: translateX(-150%);
+  }
+  to {
+    transform: translateX(400%);
+  }
+}
+
+@keyframes gradientMove {
+  0% {
+    transform: translateX(-60%);
+  }
+  50% {
+    transform: translateX(60%);
+  }
+  100% {
+    transform: translateX(-60%);
+  }
+}

@@ -59,7 +59,7 @@ export default function ListingsTable({
           placeholder="Search listings..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="max-w-md"
+          className="w-full md:w-1/3"
         />
 
        
@@ -67,7 +67,7 @@ export default function ListingsTable({
          value={category}
         onValueChange={(e) => setCategory(e)}
         >
-            <SelectTrigger className="w-full max-w-48">
+            <SelectTrigger className="w-full md:w-48">
         <SelectValue placeholder="Select a category" />
       </SelectTrigger>
       <SelectContent>

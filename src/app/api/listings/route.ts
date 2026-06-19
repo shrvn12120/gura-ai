@@ -2,6 +2,7 @@
 
 import connectDB from "@/lib/mongodb";
 import Listing from "@/models/listing.model";
+import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import slugify from "slugify";
 
@@ -15,6 +16,8 @@ export async function POST(req: Request) {
     slug: slugify(body.name, { lower: true }),
     islandId: "6a2b3316882b534c9d608058", // temporary hardcode for MVP
   });
+
+  revalidatePath('/admin/listings')
 
   return NextResponse.json(listing);
 }
@@ -52,7 +55,7 @@ export async function PATCH(
       { status: 404 }
     );
   }
-
+ revalidatePath('/admin/listings')
   return NextResponse.json(listing);
 }
 
@@ -79,7 +82,7 @@ export async function DELETE(
     }
 
     await Listing.findByIdAndDelete(id);
-
+ revalidatePath('/admin/listings')
     return NextResponse.json({
       success: true,
       message: "Listing deleted successfully",

@@ -5,7 +5,7 @@ import listingModel from "@/models/listing.model";
 export default async function page() {
   await connectDB();
 
-  const listings = await listingModel.find()
+  const listings = await listingModel.find({"islandId": "6a2b3316882b534c9d608058"})
     .sort({ createdAt: -1 })
     .lean();
 
@@ -22,7 +22,7 @@ export default async function page() {
   const data = JSON.parse(JSON.stringify(listings));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 min-h-screen">
       <div>
         <h1 className="text-2xl font-bold">Listings</h1>
         <p className="text-muted-foreground">Manage all island listings</p>

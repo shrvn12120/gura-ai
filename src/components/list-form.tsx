@@ -33,14 +33,15 @@ export default function ListingForm({
   onSuccess,
 }: Props) {
     const router = useRouter()
-  const [form, setForm] = useState<any>(
+    const [loading, setLoading] = useState(false)
+    const [form, setForm] = useState<any>(
     initialData || {
       islandId: "6a2b3316882b534c9d608058",
 
       name: "",
       slug: "",
-      category: "accommodation",
-      subCategory: "",
+      category: "guest-houses",
+      subCategory: "accommodation",
 
       description: "",
 
@@ -71,7 +72,6 @@ export default function ListingForm({
       featured: false,
     }
   );
-
   function update(key: string, value: any) {
     setForm((prev: any) => ({
       ...prev,
@@ -90,6 +90,7 @@ export default function ListingForm({
   }
 
   async function handleSubmit() {
+    setLoading(true)
     const payload = {
       ...form,
       aiTags: form.aiTags
@@ -110,6 +111,10 @@ export default function ListingForm({
     if (res.ok) {
       toast.success(mode === "create" ? "Created" : "Updated");
       onSuccess?.();
+      setLoading(false)
+      setTimeout(()=>{
+         router.push("/admin/listings")
+      },100)
     } else {
       toast.error("Error saving listing");
     }
@@ -134,7 +139,7 @@ export default function ListingForm({
   }
 
   toast("Listing deleted");
-router.push("/admin/listings")
+  router.push("/admin/listings")
 
 }
 
@@ -142,7 +147,7 @@ router.push("/admin/listings")
     <div className="space-y-6">
 
       {/* BASIC INFO */}
-      <Card >
+      <Card className="pp-4 py-10  space-y-3">
         <CardHeader>
             <CardTitle>BASIC INFO</CardTitle>
         </CardHeader>
@@ -166,11 +171,13 @@ router.push("/admin/listings")
         </div>
 
 
+<div className="flex flex-col md:flex-row gap-4">
+
 
 <div className="space-y-2">
             <Label>Category</Label>
         <Select defaultValue={form.category} onValueChange={(e) => update("category", e)}>
-      <SelectTrigger className="w-full max-w-48">
+      <SelectTrigger className="w-full ">
         <SelectValue placeholder="Select a category" />
       </SelectTrigger >
       <SelectContent >
@@ -183,15 +190,6 @@ router.push("/admin/listings")
             ))
           }
 
-
-
-
-          {/* <SelectItem value="accommodation">Accommodation</SelectItem>
-          <SelectItem value="rental">Rental</SelectItem>
-          <SelectItem value="restaurant">Restaurant</SelectItem>
-          <SelectItem value="activity">Activity</SelectItem>
-          <SelectItem value="service">Service</SelectItem>
-          <SelectItem value="place">Place</SelectItem> */}
         </SelectGroup>
       </SelectContent>
     </Select>
@@ -205,11 +203,12 @@ router.push("/admin/listings")
           onChange={(e) => update("subCategory", e.target.value)}
         />
         </div>
-
+</div>
 <div className="space-y-2">
             <Label>Description</Label>
         <Textarea
           placeholder="Description"
+          className="min-h-52"
           value={form.description}
           onChange={(e) => update("description", e.target.value)}
         />
@@ -218,7 +217,7 @@ router.push("/admin/listings")
       </Card>
 
       {/* CONTACT */}
-      <Card className="p-4 space-y-3">
+      <Card className="p-4 py-10  space-y-3">
         <CardHeader>
             <CardTitle>CONTACT INFO</CardTitle>
         </CardHeader>
@@ -270,7 +269,7 @@ router.push("/admin/listings")
       </Card>
 
       {/* LOCATION */}
-      <Card className="p-4 space-y-3">
+      <Card className="p-4 py-10  space-y-3">
         <CardHeader>
             <CardTitle>LOCATION</CardTitle>
         </CardHeader>
@@ -285,33 +284,34 @@ router.push("/admin/listings")
         />
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
-             <div className="space-y-2">
-            <Label>Latitude</Label>
-          <Input
-            placeholder="Latitude"
-            value={form?.location?.lat}
-            onChange={(e) =>
-              updateNested("location", "lat", e.target.value)
-            }
-          />
-          </div>
- <div className="space-y-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 gap-y-6">
+           <div className="space-y-2">
             <Label>Longitude</Label>
           <Input
             placeholder="Longitude"
-            value={form?.location?.lng}
+            value={form?.location?.lng || ""}
             onChange={(e) =>
               updateNested("location", "lng", e.target.value)
             }
           />
           </div>
+             <div className="space-y-2">
+            <Label>Latitude</Label>
+          <Input
+            placeholder="Latitude"
+            value={form?.location?.lat || ""}
+            onChange={(e) =>
+              updateNested("location", "lat", e.target.value)
+            }
+          />
+          </div>
+
         </div>
         </CardContent>
       </Card>
 
       {/* AI SETTINGS */}
-      <Card className="p-4 space-y-3">
+      <Card className="p-4 py-10  space-y-3">
        <CardHeader>
             <CardTitle>OTHERS</CardTitle>
         </CardHeader>
@@ -338,14 +338,23 @@ router.push("/admin/listings")
       </Card>
 
       {/* SUBMIT */}
-      <div className="w-full flex flex-col md:flex-row gap-2">
+      <div className="max-w-xl flex flex-col md:flex-row gap-4">
      
-      <Button className="w-full md:w-4/5" onClick={handleSubmit}>
-        {mode === "create" ? "Create Listing" : "Update Listing"}
+      <Button disabled={loading} className="w-full" onClick={handleSubmit}>
+        {mode === "create" ? 
+        <>
+         {!loading ?"Create Listing" :"Creating..."}
+        </>
+        : 
+        <>
+         {!loading ?"Update Listing" :"Updating..."}
+        </>
+        }
+       
       </Button>
       {
         mode === "edit" && initialData && (
-            <Button
+            <Button disabled={loading}
             type="button"
             variant={"destructive"}
             className="w-full md:w-32"
