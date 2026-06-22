@@ -23,10 +23,7 @@ export const CATEGORIES = [
     label: "Restaurants",
     name: "restaurants",
   },
-  {
-    label: "Accommodation",
-    name: "accommodation",
-  },
+
   {
     label: "Water Sports",
     name: "water-sports",
@@ -70,5 +67,9 @@ export const CATEGORIES = [
   {
     label: "Transport",
     name: "transport",
+  },
+  {
+    label: "Hotel",
+    name: "hotel",
   },
 ];

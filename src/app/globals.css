@@ -130,6 +130,13 @@
   }
 }
 
+.markdown-content p {
+  margin-bottom: 0.5rem;
+}
+
+.markdown-content li > p {
+  margin-bottom: 0;
+}
 @keyframes slide {
   from {
     transform: translateX(-150%);

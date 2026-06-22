@@ -1,11 +1,14 @@
 export default function AiThinkingLoader() {
   return (
-        <div className="w-4/5 md:w-md py-3">
-      <div className="relative h-3 overflow-hidden rounded-full  shadow shadow-primary dark:shadow-none flex items-center">
-         
-        <div className="absolute inset-y-0 w-1/2 rounded-full bg-linear-to-r from-transparent via-primary to-transparent animate-[slide_5s_linear_infinite]" />
-      <p className="w-full px-8 text-xs mx-auto my-0 text-background absolute font-bold animate-pulse">Thinking...</p> 
+    <div className="w-full md:w-md py-3">
+      <div className="relative h-10 overflow-hidden rounded-full   flex items-center">
+
+        <div className="absolute h-px inset-y-0 w-1/2 shadow-[0px_38px_30px_-10px_primary]  rounded-full bg-linear-to-r from-transparent via-primary to-transparent animate-[slide_3s_linear_infinite]" />
+        <div className="absolute h-px bottom-0 w-1/2 shadow-[0px_38px_30px_-10px_primary]  rounded-full bg-linear-to-r from-transparent via-primary to-transparent animate-[slide_3s_linear_infinite] delay-500" />
+        <p className="w-full px-8 text-xs mx-auto my-0 text-primary absolute font-light animate-pulse">Thinking...</p>
       </div>
     </div>
   );
 }
+
+// 

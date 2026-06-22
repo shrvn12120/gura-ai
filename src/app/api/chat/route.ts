@@ -637,13 +637,14 @@ export async function POST(req: Request) {
        System Prompt
     ---------------------------- */
     const systemPrompt = `
-You are the official Guraidhoo Island Concierge.
+You are the official Guraidhoo multi language Island Concierge.
 You can see previous conversation history.
 Everything this user asks about is related to Guraidhoo Island.
 
 CRITICAL: You must return a valid JSON object ONLY. Do not wrap it in anything other than raw valid JSON. Do not include markdown text blocks around the JSON object.
 
 Rules:
+- Your smart enought to translate contaxt you user spoken language.
 - The user's underlying goal is categorized as: "${intent.goal || 'unknown'}". Use this to understand if they want to navigate, get info, or compare listings.
 - If the user asks for location directions and your response contains coordinates, include extra data in the 'actions' or 'ui.links' array as objects containing a name and link.
 - If the user asks general information about Guraidhoo (e.g., "tell me about guraidhoo", "population", "land size", "distance from male"), use this official data: ${JSON.stringify(islandData)}. Provide accurate data in a concise format. Do not make up facts.
@@ -725,6 +726,18 @@ When a user asks for directions, navigation, routes, or distances, execute these
      },
      "message": "Here is your route to [Destination Name]."
    }
+
+
+
+Identity rules:
+- If asked “who made you / who trained you / who owns you”:
+  → Respond: "I was created and trained by Abdullah Sharuwaan."
+
+- If asked “what is your purpose”:
+  → Respond: "My purpose is to assist locals and tourists by providing helpful information about this island."
+
+- Never use the word “master”.
+- Keep responses short, professional, and consistent.
 Available Listings Context:
 ${JSON.stringify(context, null, 2)}
 `;
@@ -763,30 +776,117 @@ ${JSON.stringify(context, null, 2)}
 /* =====================================================
    INTENT EXTRACTION
 ===================================================== */
+// async function extractIntent(message: string, conversation: any[] = []) {
+//   try {
+//     const response = await openai.chat.completions.create({
+//       model: "gpt-4o-mini",
+//       temperature: 0,
+//       response_format: { type: "json_object" },
+//       messages: [
+//         {
+//           role: "system",
+//           content: `
+// You are an intent classifier for a Maldives travel assistant.
+// Analyze the user's message alongside the conversation history.
+
+// Allowed categories:
+// ${CATEGORIES}
+
+// Return ONLY this raw JSON schema:
+// {
+//   "category": "string or 'all'",
+//   -category must be any from ${CATEGORIES}.name
+//   "subCategory": "string or 'all'",
+//   "keywords": [],
+//   "goal": "navigation | find_place | get_info | compare | greeting",
+//   "confidence": 0
+// }
+// `,
+//         },
+//         ...conversation,
+//         { role: "user", content: message },
+//       ],
+//     });
+
+//     const content = response.choices[0]?.message?.content;
+//     if (!content) throw new Error("Empty intent response");
+
+//     return JSON.parse(content);
+//   } catch (err) {
+//     console.error("INTENT ERROR:", err);
+//     return {
+//       category: "all",
+//       subCategory: "all",
+//       keywords: [],
+//       goal: "get_info",
+//       confidence: 0,
+//     };
+//   }
+// }
+
+
 async function extractIntent(message: string, conversation: any[] = []) {
   try {
+    const validCategoryNames = CATEGORIES.map((c: any) => c.name);
+    const allowedEnums = [...validCategoryNames, "all"];
+
     const response = await openai.chat.completions.create({
       model: "gpt-4o-mini",
-      temperature: 0,
-      response_format: { type: "json_object" },
+      temperature: 0, // Kept at 0 for strict translation and classification accuracy
+      response_format: { 
+        type: "json_schema",
+        json_schema: {
+          name: "intent_extraction",
+          strict: true,
+          schema: {
+            type: "object",
+            properties: {
+              category: {
+                type: "string",
+                enum: allowedEnums,
+                description: "The primary classification category match."
+              },
+              subCategory: {
+                type: "string",
+                description: "Specific subcategory or 'all' if not defined."
+              },
+              keywords: {
+                type: "array",
+                items: { type: "string" },
+                description: "Search terms extracted out of the user input, translated strictly into English."
+              },
+              goal: {
+                type: "string",
+                enum: ["navigation", "find_place", "get_info", "compare", "greeting"],
+                description: "The primary action vector intention of the user."
+              },
+              confidence: {
+                type: "number",
+                description: "Confidence ranking scalar from 0 to 1."
+              },
+              // 👉 NEW TRANSLATION VALUE ADDED TO SCHEMA
+              englishMessage: {
+                type: "string",
+                description: "The full user message cleanly translated into English if written in another language. Keep as is if already in English."
+              }
+            },
+            required: ["category", "subCategory", "keywords", "goal", "confidence", "englishMessage"],
+            additionalProperties: false
+          }
+        }
+      },
       messages: [
         {
           role: "system",
           content: `
-You are an intent classifier for a Maldives travel assistant.
+You are a multilingual intent classifier and real-time translator for a Maldives travel assistant.
 Analyze the user's message alongside the conversation history.
 
-Allowed categories:
-${CATEGORIES}
-
-Return ONLY this raw JSON schema:
-{
-  "category": "string or 'all'",
-  "subCategory": "string or 'all'",
-  "keywords": [],
-  "goal": "navigation | find_place | get_info | compare | greeting",
-  "confidence": 0
-}
+CRITICAL INSTRUCTIONS:
+1. Detect the language of the incoming user message.
+2. In the "englishMessage" field, provide a clean, accurate translation of the user's message into English. 
+3. Extract search "keywords" exclusively as lowercase English terms.
+4. Allowed category variables are strictly: ${allowedEnums.join(", ")}.
 `,
         },
         ...conversation,
@@ -806,6 +906,7 @@ Return ONLY this raw JSON schema:
       keywords: [],
       goal: "get_info",
       confidence: 0,
+      englishMessage: message // Fall back to the original message text if translation crashes
     };
   }
 }

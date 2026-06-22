@@ -4,6 +4,7 @@ import connectDB from "@/lib/mongodb";
 import Island from "@/models/island.model";
 import { revalidatePath } from "next/cache";
 
+
 export async function updateIsland(
   slug: string,
   data: {

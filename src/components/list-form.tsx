@@ -43,7 +43,7 @@ export default function ListingForm({
       category: "guest-houses",
       subCategory: "accommodation",
 
-      description: "",
+      description: "Details will be available once final listing is published",
 
       photos: [],
 
@@ -157,7 +157,10 @@ export default function ListingForm({
         <Input
           placeholder="Name"
           value={form.name}
-          onChange={(e) => update("name", e.target.value)}
+          onChange={(e) => {
+            update("name", e.target.value)
+            update("slug", e.target.value.toLowerCase().split(" ").join("-"))
+          }}
         />
         </div>
         
@@ -228,7 +231,10 @@ export default function ListingForm({
           placeholder="Phone"
           value={form?.contact?.phone}
           onChange={(e) =>
+          {
             updateNested("contact", "phone", e.target.value)
+            updateNested("contact", "whatsapp", e.target.value)
+          }
           }
         />
         </div>
