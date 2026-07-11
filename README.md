@@ -1,36 +1,94 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🌴 Guraidhoo AI
 
-## Getting Started
+A modern AI-powered island concierge platform that helps visitors and locals discover everything about Guraidhoo Island through natural conversation.
 
-First, run the development server:
+It acts as a smart assistant for finding places, services, activities, and local information instantly using AI-powered intent understanding.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+---
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🚀 Overview
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Guraidhoo AI replaces traditional category-based browsing with a **chat-first discovery experience**.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Instead of clicking through menus, users can simply ask:
 
-## Learn More
+- “Show me guesthouses near the beach”
+- “What can I do today in Guraidhoo?”
+- “Find restaurants open now”
 
-To learn more about Next.js, take a look at the following resources:
+The system interprets intent and returns relevant results instantly.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 🎯 Key Features
 
-## Deploy on Vercel
+### 🧠 AI Concierge
+- Natural language understanding (intent extraction)
+- Smart filtering of listings (restaurants, guesthouses, shops, places)
+- Context-aware responses
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### 🏝️ Island Directory
+- Guesthouses
+- Restaurants & cafes
+- Local shops
+- Activities & excursions
+- Transport info
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### 💬 Chat-Based Interface
+- Chat-first UX for discovery
+- Suggested prompts for users
+- Optional voice input support
+
+### 🧭 Smart Search Engine
+- Category-based + semantic search
+- MongoDB-powered listings database
+- Future-ready for vector search integration
+
+### 👨‍💼 Admin Panel
+- Add / edit / delete listings
+- Upload images and metadata
+- Manage categories and tags
+
+---
+
+## 🧱 Tech Stack
+
+**Frontend**
+- Next.js (App Router)
+- TypeScript
+- Tailwind CSS
+- ShadCN UI
+
+**Backend**
+- Next.js API routes
+- MongoDB (Mongoose)
+- Zod validation
+
+**Auth**
+- Clerk Authentication
+
+**AI Layer**
+- OpenAI API (intent extraction + response generation)
+
+---
+
+## 🧠 AI Intent System
+
+The system converts natural language into structured intent using an `extractIntent` layer.
+
+### Example
+
+**Input:**
+
+"show me cheap guesthouses near beach"
+
+**Output:**
+```json
+{
+  "category": "guest-houses",
+  "filters": {
+    "price": "budget",
+    "location": "near beach"
+  },
+  "intent": "search"
+}
