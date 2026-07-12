@@ -1,26 +1,15 @@
-// import React from 'react'
-
-// type Props = {}
-
-// const page = (props: Props) => {
-//   return (
-//     <div>page</div>
-//   )
-// }
-
-// export default page
-
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export default function LoginPage() {
   const [answer, setAnswer] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  async function login(e: React.FormEvent) {
+  async function login(e: React.ChangeEvent) {
     e.preventDefault();
     setLoading(true);
 
@@ -31,6 +20,7 @@ export default function LoginPage() {
       },
       body: JSON.stringify({ answer }),
     });
+    const {message} = await res.json()
 
     setLoading(false);
 
@@ -38,7 +28,8 @@ export default function LoginPage() {
       router.push("/admin");
       router.refresh();
     } else {
-      alert("Wrong answer");
+     
+      toast(message);
     }
   }
 

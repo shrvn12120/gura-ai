@@ -7,7 +7,7 @@ export function proxy(request: NextRequest) {
   const token = request.cookies.get("admin-token")?.value;
 
   if (!token) {
-    return NextResponse.redirect(new URL("/login", request.url));
+    return NextResponse.redirect(new URL("/auth", request.url));
   }
 
   try {

@@ -3,16 +3,14 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 const SECRET = process.env.JWT_SECRET!;
-
-// Store the real answer in an env variable instead.
-const ANSWER =  "mynumberis9969893";
+const ANSWER =  process.env.ADMIN_AUTH_PASS
 
 export async function POST(req: Request) {
   const { answer } = await req.json();
 
   if (answer !== ANSWER) {
     return NextResponse.json(
-      { message: "Invalid answer" },
+      { message: "You are lying." },
       { status: 401 }
     );
   }

@@ -22,7 +22,7 @@ import {
 import { Loader2, Plus, Save, Trash } from "lucide-react";
 import { Separator } from "../ui/separator";
 import { CATEGORY_SUBCATEGORY_META_CONFIGS, getDefaultMeta, MetaField, Social } from "@/lib/categories.config";
-// import { AmenityConfig, CATEGORY_SUBCATEGORY_META_CONFIGS, getDefaultMeta, MeatMenuConfig, MetaFieldConfig, Social } from "@/lib/categories.config";
+import { ApiAttachmentUploader } from "./ImageKitAttachmentUploader";
 
 
 
@@ -119,12 +119,7 @@ export default function ListingForm({ initialData }: ListingFormProps) {
         }));
     }
 
-    function addImage() {
-        setForm((prev) => ({
-            ...prev,
-            images: [...prev.images, { id: "", url: "", alt: "" }],
-        }));
-    }
+
 
     function updateImage(index: number, field: "id" | "url" | "alt", value: string) {
         setForm((prev) => {
@@ -233,7 +228,6 @@ function getPrimitiveValue(value: any) {
   if (typeof value === "string" || typeof value === "number") return value;
   return "";
 }
-
 
 const defaultFields = CATEGORY_SUBCATEGORY_META_CONFIGS?.[form.category]?.default || [];
 const subCategoryFields = CATEGORY_SUBCATEGORY_META_CONFIGS?.[form.category]?.[form.subCategory] || [];
@@ -484,61 +478,39 @@ const otherFields = dynamicFields.filter((f) => !isBooleanField(f));
                         <CardHeader className="py-3 px-4">
                             <CardTitle className="text-base font-semibold">Images</CardTitle>
                         </CardHeader>
-                        <CardContent className="p-4 pt-0 space-y-4">
-                            <div className="space-y-2">
-                                {form.images.length > 0 ? (
-                                    form.images.map((image, index) => (
-                                        <div key={index} className="space-y-2 rounded-md border p-3 bg-card">
-                                            <div className="flex flex-row gap-2 items-end justify-center">
-                                                <div className="space-y-2 hidden">
-                                                    <Label htmlFor={`image-id-${index}`}>Image ID</Label>
-                                                    <Input
-                                                        id={`image-id-${index}`}
-                                                        placeholder="image-1"
-                                                        value={image.id}
-                                                        onChange={(e) => updateImage(index, "id", e.target.value)}
-                                                    />
-                                                </div>
-                                                <div className="space-y-2 w-full">
-                                                    <Label htmlFor={`image-url-${index}`}>Image URL</Label>
-                                                    <Input
-                                                        id={`image-url-${index}`}
-                                                        placeholder="https://example.com/1.jpg"
-                                                        value={image.url}
-                                                        onChange={(e) => updateImage(index, "url", e.target.value)}
-                                                    />
-                                                </div>
-
-                                                <div className="space-y-2 w-full">
-                                                    <Label htmlFor={`image-alt-${index}`}>Image Alt Text</Label>
-                                                    <Input
-                                                        id={`image-alt-${index}`}
-                                                        placeholder="Description of the image"
-                                                        value={image.alt}
-                                                        onChange={(e) => updateImage(index, "alt", e.target.value)}
-                                                    />
-                                                </div>
-
-                                                <Button className="w-10" type="button" variant="destructive" size="sm" onClick={() => removeImage(index)}>
-                                                    <Trash className="h-4 w-4" />
-
-                                                </Button>
-
-                                            </div>
-
-                                        </div>
-                                    ))
-                                ) : (
-                                    <p className="text-sm text-muted-foreground">No images added yet.</p>
-                                )}
-                                <Button type="button" variant="outline" size="sm" onClick={addImage}>
-                                    <Plus className="mr-2 h-4 w-4" />
-                                    Add Image
-                                </Button>
-                                <p className="text-xs text-muted-foreground">
-                                    Each image is stored as an object with id and url.
-                                </p>
-                            </div>
+                        <CardContent className=" p-4 pt-0 space-y-4">
+                           <ApiAttachmentUploader
+  // Maps your parent form state to the exact ImageItem format required
+  current={form.images.map((img) => ({
+    id: img.id,
+    url: img.url,
+    alt: img.alt,
+  }))}
+  
+  onUploadComplete={(newUploadedFiles) => {
+    newUploadedFiles.forEach((file, batchIndex) => {
+      const nextIndex = form.images.length + batchIndex;
+      updateImage(nextIndex, "id", file.id);
+      updateImage(nextIndex, "url", file.url);
+      updateImage(nextIndex, "alt", file.alt); // Instantiates an empty string entry
+    });
+  }}
+  
+  onImageDelete={(deletedFileInfo) => {
+    const targetIndex = form.images.findIndex((img) => img.id === deletedFileInfo.id);
+    if (targetIndex !== -1) {
+      removeImage(targetIndex);
+    }
+  }}
+  
+  onAltChange={(id, updatedAltText) => {
+    // Finds the index using the ID and pushes modifications directly to state
+    const targetIndex = form.images.findIndex((img) => img.id === id);
+    if (targetIndex !== -1) {
+      updateImage(targetIndex, "alt", updatedAltText);
+    }
+  }}
+/>
                         </CardContent>
                     </Card>
 
