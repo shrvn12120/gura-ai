@@ -399,7 +399,7 @@ export default function ChatUi({ notices }: Props) {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/search", {
+      const res = await fetch(`/api/search`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

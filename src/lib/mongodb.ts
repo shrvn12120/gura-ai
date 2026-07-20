@@ -24,8 +24,6 @@ async function connectDB() {
     };
 
     const connection = await connect(MONGODB_URI as string, { ...opts, dbName: opts.dbName });
-
-    // Helper to close the connection
     const close = async () => {
       await connection.disconnect();
     };

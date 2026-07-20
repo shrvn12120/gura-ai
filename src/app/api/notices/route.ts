@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import connectDB  from "@/lib/mongodb";
 import Notice from "@/models/Notice";
+import { revalidatePath } from "next/cache";
 
 
 // GET ALL
@@ -36,7 +37,7 @@ export async function POST(
 
 
     const notice = await Notice.create(body);
-
+    revalidatePath("/admin/notice")
 
     return NextResponse.json(
         notice,

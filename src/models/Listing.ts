@@ -71,6 +71,7 @@ const ListingSchema = new Schema(
       type: Schema.Types.Mixed,
       default: {},
     },
+    active: { type: Boolean, required: true, default: false },
 
     /* Optional AI / search */
     searchableText: {

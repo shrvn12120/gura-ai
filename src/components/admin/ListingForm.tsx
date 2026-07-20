@@ -21,11 +21,11 @@ import {
 // Icons
 import { Loader2, Plus, Save, Trash } from "lucide-react";
 import { Separator } from "../ui/separator";
-import { CATEGORY_SUBCATEGORY_META_CONFIGS, getDefaultMeta, MetaField, Social } from "@/lib/categories.config";
+import { getDefaultMeta, MetaField, Social } from "@/lib/categories.config";
 import { ApiAttachmentUploader } from "./ImageKitAttachmentUploader";
 
 
-
+//  CATEGORY_SUBCATEGORY_META_CONFIGS,
 export type ListingFormData = {
     _id?: string; // Optional MongoDB Document ID used for editing routing tracks
     title: string;
@@ -49,14 +49,16 @@ export type ListingFormData = {
     },
     images: { id: string; url: string, alt: string }[];
     metadata: Record<string, MetaField>;
+    active: boolean
 };
 
 interface ListingFormProps {
     initialData?: ListingFormData;
+    categories:  Record<string, Record<string, MetaField[]>>
 }
 
 
-export default function ListingForm({ initialData }: ListingFormProps) {
+export default function ListingForm({ initialData, categories }: ListingFormProps) {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
 
@@ -90,7 +92,8 @@ export default function ListingForm({ initialData }: ListingFormProps) {
                 coordinates: { lat: "", lng: "" },
             },
             images: [],
-            metadata: getDefaultMeta("guesthouse", "default"),
+            metadata: getDefaultMeta("food-and-beverage", "default"),
+            active: false
         };
     });
 
@@ -192,7 +195,27 @@ export default function ListingForm({ initialData }: ListingFormProps) {
             if (!res.ok) throw new Error(`Failed to process listing via ${method}`);
 
             router.push("/admin/listings");
-            router.refresh();
+            setForm({
+               title: "",
+            slug: "",
+            category: "food-and-beverage",
+            subCategory: "restaurant",
+            description: "",
+            contact_info: {
+                address: "",
+                phone: "",
+                email: "",
+                whatsapp: "",
+                socials: [
+                    { name: "", link: "" }
+                ],
+                coordinates: { lat: "", lng: "" },
+            },
+            images: [],
+            metadata: getDefaultMeta("food-and-beverage", "default"),
+            active: false
+            })
+            
         } catch (err) {
             console.error(err);
             alert(isEditMode ? "Error updating listing" : "Error creating listing");
@@ -229,8 +252,8 @@ function getPrimitiveValue(value: any) {
   return "";
 }
 
-const defaultFields = CATEGORY_SUBCATEGORY_META_CONFIGS?.[form.category]?.default || [];
-const subCategoryFields = CATEGORY_SUBCATEGORY_META_CONFIGS?.[form.category]?.[form.subCategory] || [];
+const defaultFields = categories?.[form.category]?.default || [];
+const subCategoryFields = categories?.[form.category]?.[form.subCategory] || [];
 
 
 
@@ -238,6 +261,8 @@ const subCategoryFields = CATEGORY_SUBCATEGORY_META_CONFIGS?.[form.category]?.[f
 const dynamicFields = Array.from(new Set([...defaultFields, ...subCategoryFields]));
 const booleanFields = dynamicFields.filter(isBooleanField);
 const otherFields = dynamicFields.filter((f) => !isBooleanField(f));
+
+
     return (
         <div className="max-w-8xl mx-auto p-6">
             <Card>
@@ -257,6 +282,27 @@ const otherFields = dynamicFields.filter((f) => !isBooleanField(f));
                             <CardTitle className="text-base font-semibold">Basic Details</CardTitle>
                         </CardHeader>
                         <CardContent className="p-4 pt-0 space-y-4">
+                          <div  onClick={() => update("active", !form.active)} className={`rounded-xl w-32 cursor-pointer transition-all border  ${
+                form.active ? "border bg-primary/5" : ""
+              }`}>
+                <div  className="flex items-center justify-between p-4">
+                  <Label
+                            className="cursor-pointer font-medium"
+                            >
+                 {form?.active? "Active":"Inactive"}
+                </Label>
+
+                <Checkbox
+                  checked={form?.active || false}
+                  onCheckedChange={(checked) =>
+                    update("active", !!checked)
+                  }
+                  onClick={(e) => e.stopPropagation()}
+                />
+                </div>
+                            
+                
+                          </div>
                             <div className="space-y-4">
                                 <div className="grid gap-4 sm:grid-cols-2">
                                     <div className="space-y-2">
@@ -292,7 +338,7 @@ const otherFields = dynamicFields.filter((f) => !isBooleanField(f));
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent>
-                                               {Object.keys(CATEGORY_SUBCATEGORY_META_CONFIGS)
+                                               {Object.keys(categories)
   .sort((a, b) => a.localeCompare(b))
   .map((c) => (
     <SelectItem key={c} value={c}>
@@ -315,7 +361,7 @@ const otherFields = dynamicFields.filter((f) => !isBooleanField(f));
                                             </SelectTrigger>
                                             <SelectContent>
                                                 {Object.keys(
-                                                    CATEGORY_SUBCATEGORY_META_CONFIGS?.[form.category] || {}
+                                                    categories?.[form.category] || {}
                                                 ).sort((a, b) => a.localeCompare(b)).map((sc) => (
                                                     <SelectItem key={sc} value={sc}>
                                                   

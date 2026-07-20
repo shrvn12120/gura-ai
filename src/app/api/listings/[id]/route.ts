@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import connectDB from "@/lib/mongodb";
 import Listing from "@/models/Listing";
 import { openai } from "@/lib/openai";
+import { revalidatePath } from "next/cache";
 
 function buildText(data: any) {
   return `
@@ -56,6 +57,7 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
     if (!updatedDoc) {
       return Response.json({ error: "Listing target document not found" }, { status: 404 });
     }
+      revalidatePath("/admin/listings")
 
     return Response.json(updatedDoc, { status: 200 });
 

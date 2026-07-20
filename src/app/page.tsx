@@ -1,13 +1,18 @@
 import ChatUi from '@/components/chat-ui'
 import connectDB from '@/lib/mongodb';
 import Notice from '@/models/Notice';
-import React, { Suspense } from 'react'
+import { cacheLife, cacheTag } from 'next/cache';
+import  { Suspense } from 'react'
 
 type Props = {}
 
  async function getNotice(){
+    "use cache"
+  cacheLife("days")
+  cacheTag('notice')
 
     await connectDB();
+
 
     const res = await Notice
         .find({

@@ -45,8 +45,8 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col bg-zinc-50 dark:bg-zinc-950">
         <ThemeProvider
-         attribute="class"
-            defaultTheme="dark"
+          attribute="class"
+            defaultTheme="system"
             enableSystem
             disableTransitionOnChange
           

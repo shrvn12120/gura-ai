@@ -1,3 +1,4 @@
+import { CATEGORY_META_CONFIGS } from "@/app/action";
 import ListingForm, { ListingFormData } from "@/components/admin/ListingForm";
 import connectDB from "@/lib/mongodb";
 import Listing from "@/models/Listing";
@@ -34,16 +35,17 @@ export default async function EditListingPage({ params }: EditPageProps) {
       }
 
     },
+    active: rawListing.active,
 
     images: rawListing.images,
     metadata: (rawListing.metadata as Record<string, any>) || {},
   };
 
-
+ const x = await CATEGORY_META_CONFIGS()
 
   return(
       <div className='w-full'>
-       <ListingForm initialData={preparedData} />
+       <ListingForm initialData={preparedData} categories={x}/>
       </div>
     )
 }

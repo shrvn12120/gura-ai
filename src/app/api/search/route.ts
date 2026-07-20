@@ -1,8 +1,6 @@
 import { NextRequest } from "next/server";
 import OpenAI from "openai";
-import connectDB from "@/lib/mongodb";
-import Listing from "@/models/Listing";
-import { classifyIntent } from "@/app/action";
+import { classifyIntent, retrieveContext } from "@/app/action";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!,
@@ -31,109 +29,110 @@ export async function POST(req: NextRequest) {
     const queryText = String(lastUserMessage.content).trim();
     const conversationHistory = messages.slice(-4);
 
-    const {list, aboutIsland, more, single} = await classifyIntent(messages.at(-1)?.content as string, conversationHistory)
+    // const {list, aboutIsland, more, single} 
+   const intent = await classifyIntent(messages.at(-1)?.content as string, conversationHistory)
 
-   let contextString = null
 
+   const x = await retrieveContext(intent, queryText)
+
+
+
+
+//     if(list){
+    
+//     await connectDB();
+
+//     // 1. Generate text embeddings targeting only the newest user question
+//     const embeddingResponse = await openai.embeddings.create({
+//       model: "text-embedding-3-small",
+//       input: queryText,
+//     });
+//     const vector = embeddingResponse.data[0].embedding;
+
+//     // 2. Optimized vector aggregation with tight projection limit 
+//     const docs = await Listing.aggregate([
+//       {
+//         $vectorSearch: {
+//           index: "vector_index",
+//           path: "embedding",
+//           queryVector: vector,
+//           numCandidates: 100,
+//           limit: 4, // Tightened limit preserves model focus and reduces token cost
+//            filter: {
+//             active: true,
+//           },
+//         },
+//       },
+//       {
+//         $project: {
+//           title: 1,
+//           category: 1,
+//           subCategory: 1,
+//           description: 1,
+//           contact_info: 1,
+//           metadata: 1,
+//           images: 1
+//         }
+//       }
+//     ]);
+
+   
+
+//     // 3. Compact contextual data layout formatting
+//      contextString = docs
+//       .map((doc, idx) => {
+//         return `[DOC ${idx + 1}] ${doc.title} (${doc.category} in ${doc.island || "Guraidhoo"})
+// Category: ${doc.category}
+// SubCategory: ${doc.subCategory}
+// Details: ${doc.description}
+// Contact_info: ${JSON.stringify(doc.contact_info)}
+// Spec: ${JSON.stringify(doc.metadata)}
+// Photoes: ${JSON.stringify(doc.images)}
+// `;
+
+//       })
+//       .join("\n\n");
+//     }
+//     if(single){
+//       await connectDB()
+
+//       const keywords = single.name
+//   .split(/\s+/)
+//   .filter(Boolean);
+
+// const query = {
+//   $and: keywords.map(word => ({
+//     title: {
+//       $regex: word,
+//       $options: "i",
+//     },
+//   })),
+// };
+
+//       const res = await Listing.find(query)
+
+// if(res){
+//       contextString = res
+//       .map((doc, idx) => {
+//         return `[DOC ${idx + 1}] ${doc.title} (${doc.category} in ${doc.island || "Guraidhoo"})
+// Category: ${doc.category}
+// SubCategory: ${doc.subCategory}
+// Details: ${doc.description}
+// Contact_info: ${JSON.stringify(doc.contact_info)}
+// Spec: ${JSON.stringify(doc.metadata)}
+// Photoes:  ${JSON.stringify(doc.images)}
+// `;
+//       })
+
+// }else{
+//   contextString=``
+// }
+
+
+//     }
+
+    
   
-
-    if(list){
-    
-    await connectDB();
-
-    // 1. Generate text embeddings targeting only the newest user question
-    const embeddingResponse = await openai.embeddings.create({
-      model: "text-embedding-3-small",
-      input: queryText,
-    });
-    const vector = embeddingResponse.data[0].embedding;
-
-    // 2. Optimized vector aggregation with tight projection limit 
-    const docs = await Listing.aggregate([
-      {
-        $vectorSearch: {
-          index: "vector_index",
-          path: "embedding",
-          queryVector: vector,
-          numCandidates: 100,
-          limit: 3, // Tightened limit preserves model focus and reduces token cost
-        },
-      },
-      {
-        $project: {
-          title: 1,
-          category: 1,
-          subCategory: 1,
-          description: 1,
-          contact_info: 1,
-          metadata: 1,
-          images: 1
-        }
-      }
-    ]);
-
-    // 3. Compact contextual data layout formatting
-     contextString = docs
-      .map((doc, idx) => {
-        return `[DOC ${idx + 1}] ${doc.title} (${doc.category} in ${doc.island || "Guraidhoo"})
-Category: ${doc.category}
-SubCategory: ${doc.subCategory}
-Details: ${doc.description}
-Contact_info: ${JSON.stringify(doc.contact_info)}
-Spec: ${JSON.stringify(doc.metadata)}
-Photoes: ${JSON.stringify(doc.images)}
-`;
-
-      })
-      .join("\n\n");
-    }
-//   if (aboutIsland){
-// console.log("intention is aboutIsland")
-//     }
-//     if(more){
-//     console.log("intention is more")
-//     }
-    if(single){
-      console.log("intention is single")
-      await connectDB()
-
-      const keywords = single.name
-  .split(/\s+/)
-  .filter(Boolean);
-
-const query = {
-  $and: keywords.map(word => ({
-    title: {
-      $regex: word,
-      $options: "i",
-    },
-  })),
-};
-
-      const res = await Listing.find(query)
-
-if(res){
-      contextString = res
-      .map((doc, idx) => {
-        return `[DOC ${idx + 1}] ${doc.title} (${doc.category} in ${doc.island || "Guraidhoo"})
-Category: ${doc.category}
-SubCategory: ${doc.subCategory}
-Details: ${doc.description}
-Contact_info: ${JSON.stringify(doc.contact_info)}
-Spec: ${JSON.stringify(doc.metadata)}
-Photoes:  ${JSON.stringify(doc.images)}
-`;
-      })
-
-}else{
-  contextString=``
-}
-
-
-    }
-
-    
-
 
     const systemInstruction = {
       role: "system" as const,
@@ -148,15 +147,33 @@ Rules:
 - If a place has one or more images and the user asks what it looks like, include the image(s) using Markdown:
   ![Meaningful description](IMAGE_URL "Tooltip text")
   
-  CRITICAL RULE FOR IMAGE_URL: 
-  - Use the exact string provided in the context. 
-  - DO NOT add, alter, or prepend any domain, protocol (like https://), or placeholder text. 
-  - If the path in the context is relative (e.g., "/image.jpg" or "/images/beach.jpg"), output it exactly as a relative path. Do not try to "fix" or complete the URL.
+CRITICAL RULE FOR IMAGE_URL
 
-- If multiple images are available, show up to 4.
+- Output IMAGE_URL exactly as stored in the context.
+- Do NOT modify, reconstruct, or normalize the URL.
+- Do NOT change the domain, filename, path, capitalization, query parameters, or extension.
+- Do NOT replace the ImageKit URL with another URL.
+- If no suitable image exists in the current context, tell there is no image to give.
+
+IMAGE SELECTION
+
+- If the listing contains multiple images, choose the SINGLE image that best matches the user's request.
+- Match the user's request against each image's "alt" text.
+- If an image's alt text  matches the requested subject, use that image.
+- If multiple images match, choose the most specific match.
+- If no alt text matches, choose the most representative image of the listing.
+- Never choose an unrelated image simply because one exists.
+- If multiple images are available, show up to 3.
 - Never invent image URLs.
+
+URL OUTPUT
+
+- Output IMAGE_URL exactly as stored in the context.
+- If the stored value is a relative path, return the relative path exactly as provided.
+- If the stored value is a full ImageKit URL (https://ik.imagekit.io/...), return the full URL exactly as provided.
+- Never prepend, append, or modify any part of the URL.
 Context:
-${contextString}`
+${x}`
     };
 
     // Combine system prompt with recent conversation history

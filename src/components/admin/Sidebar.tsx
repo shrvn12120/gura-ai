@@ -30,6 +30,12 @@ export default function SidebarMenu() {
       icon: BookOpen,
       active: pathname.startsWith("/admin/notice"),
     },
+     {
+      label: "Meta configs",
+      href: "/admin/config/meta-configs",
+      icon: BookOpen,
+      active: pathname.startsWith("/admin/config/meta-configs"),
+    },
   ];
 
   return (

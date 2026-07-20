@@ -6,18 +6,22 @@ import { Plus } from "lucide-react"; // Optional: Adds a nice plus icon to your 
 import { Separator } from "@/components/ui/separator";
 import Notice, { INotice } from "@/models/Notice";
 import { Badge } from "@/components/ui/badge";
+import { Suspense } from "react";
 
-export default async function ListingsPage() {
+
+
+async function Informations() {
+"use cache"
   await connectDB();
-
-  // Fetching listings from MongoDB (Mongoose returns documents as objects)
-  const listings= await Notice
+ const listings = await Notice
         .find()
         .sort({
             createdAt:-1
         });
-
   return (
+      <Suspense fallback={<div>Loading...</div>}>
+
+
     <div className="w-full">
       {/* Header Section */}
       <div className="flex justify-between items-center">
@@ -40,12 +44,12 @@ export default async function ListingsPage() {
 
       {/* Listings Grid/List */}
       <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-        {listings.length === 0 ? (
+        {listings?.length === 0 ? (
           <p className="text-muted-foreground col-span-full text-center py-10">
             No Notice is there yet. Create a new one to get started!
           </p>
         ) : (
-          listings.map((item: INotice) => (
+          listings?.map((item: INotice) => (
             <Link key={item?._id?.toString() || ""} href={`/admin/notice/${item._id}`}>
               <Card className="h-full hover:bg-accent/50 transition-colors cursor-pointer shadow-sm">
                 <CardHeader>
@@ -80,5 +84,15 @@ export default async function ListingsPage() {
         )}
       </div>
     </div>
+   </Suspense>
+  )
+}
+
+export default async function Page() {
+
+
+
+  return (
+   <Informations />
   );
 }

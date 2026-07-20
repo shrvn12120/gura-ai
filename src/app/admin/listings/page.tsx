@@ -3,8 +3,11 @@ import connectDB from "@/lib/mongodb";
 import Listing from "@/models/Listing";
 
 import ListingsClient from "@/components/admin/ListDashboard";
+import { CATEGORY_META_CONFIGS } from "@/app/action";
+import { Suspense } from "react";
 
-export default async function ListingsPage() {
+ async function Informations() {
+  "use cache"
   await connectDB();
 
   const listings = await Listing.find()
@@ -16,6 +19,14 @@ export default async function ListingsPage() {
     _id: item._id.toString(),
   }));
 
-    return <ListingsClient listings={serializedListings} />;
+  const x = await CATEGORY_META_CONFIGS()
+
+    return(
+      <Suspense fallback={<p>Loading...</p>}>
+        <ListingsClient categories={x} listings={serializedListings} />
+      </Suspense>
+    );
 
 }
+
+export default async function Page(){  return( <Informations />)}

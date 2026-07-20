@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import connectDB  from "@/lib/mongodb";
 import Notice from "@/models/Notice";
+import { revalidatePath } from "next/cache";
 type RouteContext = {
   params: Promise<{ id: string }>;
 };
@@ -71,6 +72,8 @@ export async function PATCH(
     if (!notice) {
       return NextResponse.json({ error: "Notice not found" }, { status: 404 });
     }
+
+       revalidatePath("/admin/notice")
 
     // 7. Return the updated document
     return NextResponse.json(notice);

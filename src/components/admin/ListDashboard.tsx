@@ -20,33 +20,41 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { CATEGORY_SUBCATEGORY_META_CONFIGS } from "@/lib/categories.config";
+// import { CATEGORY_SUBCATEGORY_META_CONFIGS } from "@/lib/categories.config";
 import { Label } from "../ui/label";
+import { Badge } from "../ui/badge";
+import {MetaField } from "@/lib/categories.config";
 
 interface Listing {
     _id: string;
     title: string;
     category: string;
     subCategory?: string;
+    active?: boolean
 }
 
 interface Props {
     listings: Listing[];
+     categories:  Record<string, Record<string, MetaField[]>>
 }
 
-export default function ListingsClient({ listings }: Props) {
+export default function ListingsClient({ listings, categories }: Props) {
     const [search, setSearch] = useState("");
     const [category, setCategory] = useState("all");
     const [subCategory, setSubCategory] = useState("all");
-
+    const [activeStatus, setActiveStatus] = useState("all")
+    const CATEGORY_SUBCATEGORY_META_CONFIGS = categories
 
     const filteredListings = useMemo(() => {
         return listings.filter((item) => {
+
             const matchesSearch =
                 search === "" ||
                 item.title?.toLowerCase().includes(search.toLowerCase()) ||
                 item.category?.toLowerCase().includes(search.toLowerCase()) ||
                 item.subCategory?.toLowerCase().includes(search.toLowerCase());
+
+        
 
             const matchesCategory =
                 category === "all" || item.category === category;
@@ -54,9 +62,16 @@ export default function ListingsClient({ listings }: Props) {
             const matchesSubCategory =
                 subCategory === "all" || item.subCategory === subCategory;
 
-            return matchesSearch && matchesCategory && matchesSubCategory;
+                        
+
+            const matchesActiveStatus =
+    activeStatus === "all" ||
+    (activeStatus === "active" && item.active === true) ||
+    (activeStatus === "inactive" && item.active === false);
+            
+            return matchesSearch && matchesCategory && matchesSubCategory && matchesActiveStatus;
         });
-    }, [listings, search, category, subCategory]);
+    }, [listings, search, category, subCategory, activeStatus]);
 
     return (
         <div className="w-full">
@@ -83,7 +98,7 @@ export default function ListingsClient({ listings }: Props) {
             <Separator className="my-8" />
 
             {/* Search */}
-            <div className="mb-6 grid gap-4 md:grid-cols-5 border p-4  rounded-2xl bg-card">
+            <div className="mb-6 grid gap-4 grid-cols-1 md:grid-cols-6 border p-4  rounded-2xl bg-card">
                 {/* Search */}
                 <div className="col-span-2  space-y-2">
                     <Label>Search by name</Label>
@@ -110,7 +125,7 @@ export default function ListingsClient({ listings }: Props) {
                             <SelectValue placeholder="Category" />
                         </SelectTrigger>
 
-                        <SelectContent>
+                        <SelectContent className="w-72!">
                             <SelectItem value="all">All Categories</SelectItem>
 
 
@@ -126,7 +141,9 @@ export default function ListingsClient({ listings }: Props) {
                                 ))}
                         </SelectContent>
                     </Select>
+                    
                 </div>
+
                 <div className=" space-y-2">
                     <Label>Filter Subcategory</Label>
                     {/* Subcategory */}
@@ -138,7 +155,7 @@ export default function ListingsClient({ listings }: Props) {
                             <SelectValue placeholder="Subcategory" />
                         </SelectTrigger>
 
-                        <SelectContent>
+                        <SelectContent className="w-72">
                             <SelectItem value="all">All Subcategories</SelectItem>
 
                             {Object.keys(
@@ -148,10 +165,30 @@ export default function ListingsClient({ listings }: Props) {
 
                                     {sc.split("-").map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(" ")}
                                 </SelectItem>
-                            ))}
+                            )).filter((i)=>i.key !== "default")}
                         </SelectContent>
                     </Select>
                 </div>
+
+                <div className=" space-y-2">
+                    <Label>Active Status</Label>
+                    {/* Subcategory */}
+                    <Select
+                        value={activeStatus}
+                        onValueChange={setActiveStatus}
+                    >
+                        <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Active status" />
+                        </SelectTrigger>
+
+                        <SelectContent>
+                            <SelectItem value="all">All</SelectItem>
+                            <SelectItem value="active">Active</SelectItem>
+                            <SelectItem value="inactive">Inactive</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+
                 <div className="w-full h-full flex items-end">
                     <Button variant={"outline"} className="border-destructive! text-destructive! w-full" onClick={(() => {
                         setSearch("")
@@ -183,25 +220,26 @@ export default function ListingsClient({ listings }: Props) {
                             key={item._id}
                             href={`/admin/listings/${item._id}`}
                         >
-                            <Card className="h-full cursor-pointer transition-colors hover:bg-accent/50">
+                            <Card className="h-full cursor-pointer transition-colors hover:bg-accent/50 border border-dashed">
                                 <CardHeader>
-                                    <CardTitle className="line-clamp-1">
+                                    <CardTitle className="line-clamp-1 flex justify-between">
                                         {item.title}
+                                        {item?.active && item.active ? <Badge variant={"default"}>Active</Badge>:<Badge variant={"destructive"}>Inactive</Badge>}
                                     </CardTitle>
 
                                     <CardDescription>
-                                        <span className="uppercase font-semibold tracking-wide text-primary">
-                                            {item.category}
-                                        </span>
-
-                                        {item.subCategory && (
+                                        <span className="uppercase font-semibold tracking-wide text-muted-foreground text-xs">
+                                            {item.category.split("-").join(" ")} {" "} ({item.subCategory && (
                                             <>
-                                                <br />
-                                                <small className="text-muted-foreground">
+                                              
+                                                <small className="">
                                                     {item.subCategory}
                                                 </small>
                                             </>
-                                        )}
+                                        )})
+                                        </span>
+
+                                        
                                     </CardDescription>
                                 </CardHeader>
 
