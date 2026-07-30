@@ -57,7 +57,7 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
     if (!updatedDoc) {
       return Response.json({ error: "Listing target document not found" }, { status: 404 });
     }
-      revalidatePath("/admin/listings")
+      revalidatePath("/admin/listings", "layout")
 
     return Response.json(updatedDoc, { status: 200 });
 

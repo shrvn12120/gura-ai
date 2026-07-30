@@ -38,6 +38,7 @@ export async function POST(
 
     const notice = await Notice.create(body);
     revalidatePath("/admin/notice")
+    revalidatePath("/")
 
     return NextResponse.json(
         notice,

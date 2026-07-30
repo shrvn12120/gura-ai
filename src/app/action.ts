@@ -1,227 +1,11 @@
 "use server";
 
 import { MetaConfig } from "@/components/admin/meta-config/types";
-// import { CATEGORY_SUBCATEGORY_META_CONFIGS } from "@/lib/categories.config";
-// import OpenAI from "openai";
-
-// const openai = new OpenAI({
-//   apiKey: process.env.OPENAI_API_KEY,
-// });
-
-// const categoryText = Object.entries(CATEGORY_SUBCATEGORY_META_CONFIGS)
-//   .map(([category, subCategories]) => {
-//     const subs = Object.keys(subCategories)
-//       .filter((sub) => sub !== "default")
-//       .map((sub) => `  ${sub}`)
-//       .join("\n");
-
-//     return `${category}:\n${subs}`;
-//   })
-//   .join("\n\n");
-
-// const classifierPrompt = `
-// You are an intent classifier for a single island Maldives travel assistant.
-
-// Analyze the user's message and return ONLY valid JSON.
-
-// You must choose exactly one:
-// * Tax/buugy/golf cart is { category: 'transport', subCategory: 'in-land' }.
-
-// 1. aboutIsland
-// - true when the user asks general information about the island.
-// - list and more must be null.
-
-// 2. list
-// - use when user wants recommendations, suggestions, or semantic discovery.
-// - Examples:
-//   "Recommend guest houses"
-//   "Best restaurants"
-//   "Where should I stay?"
-// - more must be null.
-
-// 3. more
-// - use when user wants a complete listing, any type of all.
-// - Examples:
-//   "Show all restaurants"
-//   "List all guest houses"
-//   "Give list of all buggy phone number"
-// - list must be null.
-
-// 4. single
-// - when user want single or a specefic type information.
-// - Examples:
-//   "where is A cafe"
-//   "where is --certain-- type/place/activity"
-//   "When a user asks to locate, guide them to, or find a specific place (e.g., 'where is H72', 'guide me to Rustic', 'find Amore/Bikini Beach')"
-// - more must be null.
-
-// Categories:
-// ${
-//   categoryText
-// }
-// -Make sure subCategorie is in correct category
-
-// Return format:
-
-// {
-//   "list": {
-//     "category": "",
-//     "subCategory": ""
-//   } | null,
-
-//   "aboutIsland": boolean,
-
-//   "more": {
-//     "category": "",
-//     "subCategory": ""
-//   } | null
-
-//   "single": {
-//     "name": "in lowercase",
-//   } | null
-// }
-
-// Rules:
-// - If aboutIsland is true, list,more and single must be null.
-// - Never return both list and more or more and single.
-// - If unsure, return all null except aboutIsland false.
-// - One intention is clear, dont change unless user get what he is tring.
-// `;
-
-// export type IntentClassification = {
-//   list: {
-//     category: string;
-//     subCategory: string;
-//   } | null;
-
-//   aboutIsland: boolean;
-
-//   more: {
-//     category: string;
-//     subCategory: string;
-//   } | null;
-//   single: {
-//     name: string
-//   } | null;
-// };
-
-// export async function classifyIntent(
-//   message: string,
-//   conversation: OpenAI.Chat.ChatCompletionMessageParam[]
-// ): Promise<IntentClassification> {
-
-//   try {
-//     const response = await openai.responses.create({
-//       model: "gpt-4.1-nano",
-
-//       input: [
-//         {
-//           role: "system",
-//           content: classifierPrompt,
-//         },
-//         {
-//           role: "user",
-//           content: message,
-//         },
-//       ],
-
-//       text: {
-//         format: {
-//           type: "json_schema",
-//           name: "intent_classifier",
-//           strict: true,
-//           schema: {
-//             type: "object",
-//             additionalProperties: false,
-
-//             properties: {
-//               list: {
-//                 type: ["object", "null"],
-//                 properties: {
-//                   category: {
-//                     type: "string",
-//                   },
-//                   subCategory: {
-//                     type: "string",
-//                   },
-//                 },
-//                 required: [
-//                   "category",
-//                   "subCategory",
-//                 ],
-//                 additionalProperties: false,
-//               },
-
-//               aboutIsland: {
-//                 type: "boolean",
-//               },
-
-//               more: {
-//                 type: ["object", "null"],
-//                 properties: {
-//                   category: {
-//                     type: "string",
-//                   },
-//                   subCategory: {
-//                     type: "string",
-//                   },
-//                 },
-//                 required: [
-//                   "category",
-//                   "subCategory",
-//                 ],
-//                 additionalProperties: false,
-//               },
-//                single: {
-//                 type: ["object", "null"],
-//                 properties: {
-//                      name: {
-//                     type: "string",
-//                   }
-//                 },
-//                 required: [
-//                   "name"
-//                 ],
-//                 additionalProperties: false,
-//               },
-//             },
-
-//             required: [
-//               "list",
-//               "aboutIsland",
-//               "more",
-//               "single"
-//             ],
-//           },
-//         },
-//       },
-//     });
-
-//     return JSON.parse(
-//       response.output_text
-//     ) as IntentClassification;
-
-//   } catch (error) {
-//     console.error(
-//       "Intent classification error:",
-//       error
-//     );
-
-//     return {
-//       list: null,
-//       aboutIsland: false,
-//       more: null,
-//       single: null
-//     };
-//   }
-// }
-
-import { CATEGORY_SUBCATEGORY_META_CONFIGS } from "@/lib/categories.config";
 import { formatListing, formatListings } from "@/lib/list-format";
 import connectDB from "@/lib/mongodb";
 import Listing from "@/models/Listing";
 import metaConfig from "@/models/MetaConfig";
-import { cacheLife, cacheTag } from "next/cache";
+import Notice from "@/models/Notice";
 import OpenAI from "openai";
 
 
@@ -264,241 +48,365 @@ export async function getMetaConfigs(): Promise<MetaConfig[]> {
 
 
 
+// export async function classifyIntent(
+//   message: string,
+//   conversation: OpenAI.Chat.ChatCompletionMessageParam[],
+// ): Promise<IntentClassification> {
+
+//     const configs = await getMetaConfigs();
+//     const categoryText = configs.map((c)=>{
+//       const subs = c.subCategories.filter(((sub)=> sub.name !== "default"))
+//       .map((sub)=>{
+//         return sub.name
+//       }).join("\n");
+//     return `${c.category}:\n${subs}`;
+//     })
+//   .join("\n\n");
+
+// const classifierPrompt = `
+// You are an intent classifier for the Explore Guraidhoo AI assistant.
+
+// Your ONLY job is to classify the user's message.
+
+// DO NOT answer the user.
+
+// Return ONLY valid JSON.
+
+
+
+// ------------------------------------
+// AVAILABLE INTENT TYPES
+// ------------------------------------
+
+// There are ONLY FOUR possible intent types.
+
+// 1. knowledge
+
+// Use when the user is asking for general information about Guraidhoo that does NOT require searching listings.
+// if user message is matching in any category listed, do not return knowledge as intention type.
+
+// Examples:
+
+// - Where is Guraidhoo?
+// - Tell me about Guraidhoo.
+// - History of Guraidhoo.
+// - Population of Guraidhoo.
+// - Currency.
+// - Local customs.
+// - Things to know before visiting.
+
+// Return:
+
+// {
+//   "type":"knowledge",
+//   "name":null,
+//   "category":null,
+//   "subCategory":null
+// }
+
+// ------------------------------------
+
+// 2. single
+
+// Use ONLY when the user is asking about ONE specific business, place, organization or listing.
+
+// A business/place name must be identifiable in the message.
+
+// Examples:
+
+// - Tell me about Amore Cafe
+// - Silver Fin Restaurant
+// - Does Kaafu Inn have WiFi?
+// - Show photos of Arena Beach
+// - Where is Guraidhoo Health Centre?
+// - Call Muranga Chill
+
+// Return:
+
+// {
+//   "type":"single",
+//   "name":"<exact business name as written by the user>",
+//   "category":null,
+//   "subCategory":null
+// }
+
+// Rules:
+
+// - Preserve the business name exactly as written.
+// - Never modify spelling.
+// - Never guess missing names.
+
+// ------------------------------------
+
+// 3. category
+
+// Use when the user wants MULTIPLE listings from a known category.
+
+// Category filtering alone should be enough.
+
+// Available Categories:
+
+// ${categoryText}
+
+// Examples:
+
+// - Restaurants
+// - Guesthouses
+// - Cafes
+// - Hotels
+// - Shops
+// - Dive centres
+// - Watersports
+// - Beaches
+// - Mosques
+// - Parks
+// - Arrivals and departure information
+// - Ferry schedules
+
+// Government & Public Services
+
+// If the request is about:
+
+// - police
+// - health centre
+// - hospital
+// - clinic
+// - government office
+// - council
+// - immigration
+// - public services
+// - emergency assistance
+// - someone stole my wallet
+// - I need medical help
+
+// Return:
+
+// {
+//   "type":"category",
+//   "category":"organization",
+//   "subCategory":"government"
+// }
+
+// Examples:
+
+// "I need a doctor"
+
+// {
+//  "type":"category",
+//  "category":"organization",
+//  "subCategory":"government"
+// }
+
+// "My wallet was stolen"
+
+// {
+//  "type":"category",
+//  "category":"organization",
+//  "subCategory":"government"
+// }
+
+// ------------------------------------
+
+// 4. semantic
+
+// Use when the user is describing WHAT they want instead of WHO they want.
+
+// These requests REQUIRE semantic/vector search.
+
+// Examples:
+
+// - Cheap accommodation
+// - Romantic dinner
+// - Best sunset restaurant
+// - Quiet guesthouse
+// - Best snorkeling
+// - Family friendly activities
+// - Good coffee
+// - Beachfront hotel
+// - Restaurant with vegan food
+// - Place to watch sunset
+// - Best swimming spot
+// - Hotel near bikini beach
+
+
+// Return:
+
+// {
+//   "type":"semantic",
+//   "name":null,
+//   "category":"<best matching category if known>",
+//   "subCategory":"<best matching subcategory if known>"
+//   "needsWebSearch": false
+// }
+
+// ------------------------------------
+// DECISION RULES
+// ------------------------------------
+
+// Follow these rules IN ORDER.
+
+// Rule 1
+
+// If the message contains a specific business/place/listing name
+
+// → type = "single"
+
+// Rule 2
+
+// Else if the user wants multiple businesses from a known category
+
+// → type = "category"
+
+// Rule 3
+
+// Else if the user describes qualities, preferences or attributes that require finding the most relevant listings
+
+// → type = "semantic"
+
+// Rule 4
+
+// Asking About Guraidhoo island
+
+// → type = "knowledge"
+
+// ------------------------------------
+// IMPORTANT RULES
+// ------------------------------------
+
+// Never answer the user's question.
+
+// Return ONLY JSON.
+
+// Never wrap JSON inside markdown.
+
+// Never explain your decision.
+
+// Never invent business names.
+
+// Never invent categories outside the provided category list.
+
+// If category or subCategory is unknown, return null.
+
+// If user intention is unclear output type must be semantic.
+
+
+// ------------------------------------
+// OUTPUT SCHEMA
+// ------------------------------------
+
+// {
+//   "type":"knowledge | single | category | semantic",
+//   "name":null,
+//   "category":null,
+//   "subCategory":null,
+// }
+// `
+
+
+//   try {
+//     // 1. Build the complete message history with the classification system instructions first
+//     const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
+//       {
+//         role: "system",
+//         content: classifierPrompt,
+//       },
+//       ...conversation, // Spreads previous back-and-forth turns
+//       {
+//         role: "user",
+//         content: message, // Appends the latest message to classify
+//       },
+//     ];
+
+//     // 2. Execute the completion using strict JSON schema validation
+//     const response = await openai.chat.completions.create({
+//       model:"gpt-4.1-nano", // Standard chat completion models work best with conversation parameters
+//       messages: messages,
+//       response_format: {
+//         type: "json_object",
+//       },
+//     });
+
+//     const content = response.choices[0].message.content;
+//     if (!content) throw new Error("Empty response from OpenAI");
+
+//     return JSON.parse(content) as IntentClassification;
+//   } catch (error) {
+//     console.error("Intent classification error:", error);
+//     return {
+//       type: "general",
+//       name: null,
+//       category: null,
+//       subCategory: null,
+//     };
+//   }
+// }
 export async function classifyIntent(
   message: string,
   conversation: OpenAI.Chat.ChatCompletionMessageParam[],
 ): Promise<IntentClassification> {
-
-    const configs = await getMetaConfigs();
-    const categoryText = configs.map((c)=>{
-      const subs = c.subCategories.filter(((sub)=> sub.name !== "default"))
-      .map((sub)=>{
-        return sub.name
-      }).join("\n");
-    return `${c.category}:\n${subs}`;
+  const configs = await getMetaConfigs();
+  
+// Format categories as a clear lookup schema to enforce strict parent-child matching
+  const categoryText = configs
+    .map((c) => {
+      const subs = c.subCategories
+        .filter((sub) => sub.name !== "default")
+        .map((sub) => `"${sub.name}"`)
+        .join(", ");
+      return `  "${c.category}": [${subs || ""}]`;
     })
-  .join("\n\n");
+    .join(",\n");
 
+  const classifierPrompt = `You are a strict JSON intent classifier for the Explore Guraidhoo AI assistant. 
+Your ONLY job is to output a raw JSON object matching the schema below. Do not include markdown code fences or conversational text.
 
-// const classifierPrompt = `
-// You are an intent classifier for a single island Maldives travel assistant.
-// Analyze the user's latest message considering the provided conversation history and return a structured JSON response.
-
-// You must choose exactly one intent:
-// * Tax/buggy/golf cart is { category: 'transport', subCategory: 'in-land' }.
-
-// 1. aboutIsland
-// - true when the user asks general information about the island.
-
-// 2. list
-// - use when user wants recommendations, suggestions, or semantic discovery.
-// - Examples: "Recommend guest houses", "Best restaurants", "Where should I stay?", "i dont know where am stying"
-// - If the user is finding unknown things/places/types.
-// - If user is looking for a place near/next/infront of a certain near/next/infront
-
-// 3. more
-// - use when user wants a complete listing, any type of all.
-// - Examples: "Show all restaurants", "List all guest houses", "Give list of all buggy phone number"
-
-// 4. single
-// - when user want a specific information.
-// - Examples: "where is A cafe", "where is --certain-- type/place/activity", "When a user asks to locate, guide them to, or find a specific place (e.g., 'where is H72', 'guide me to Rustic', 'find Amore/Bikini Beach')"
-
-// Categories:
-// ${categoryText}
-// - Make sure subCategory is in the correct category.
-
-// Rules:
-// - If aboutIsland is true; list, more, and single must be null.
-// - Never return both list and more...., Only one structure can be active.
-// - If unsure, return all null except aboutIsland false.
-// - Keep the user's true intent stable across turns unless they explicitly change what they are trying to do.
-//   Examples:
-//   user: "whats the nearest A to B",
-//   assistant: "The nearest A to B is C",
-//   user: "can i get phone number?" => your smart to know its C user is refering.
-
-// `;
-const classifierPrompt = `
-You are an intent classifier for Explore Guraidhoo AI assistant.
-
-Your job is ONLY to classify the user's request.
-
-Do not answer the user.
-
-Return JSON only.
-
-
-Available intent types:
-
-
-1. general
-
-Questions that can be answered without local database.
-
-Examples:
-
-- What currency does Maldives use?
-- What language is spoken?
-- What should I pack?
-- Best time to visit Maldives?
-- Is Maldives safe?
-
-
-2. knowledge
-
-Questions about Guraidhoo island information.
-
-Examples:
-
-- Where is Guraidhoo?
-- How big is Guraidhoo?
-- Population of Guraidhoo?
-- Ferry information?
-
-
-3. single
-
-User asks about a specific business/place/listing.
-
-Examples:
-
-- Tell me about Amore Cafe
-- Does Arena Beach have WiFi?
-- Show me photos of a guesthouse
-
-
-Requires:
-name
-
-
-4. category
-
-User wants a list of businesses.
-Categories:
-${categoryText}
-- Make sure subCategory is in the correct category.
-
-Examples:
-
-- Restaurants in Guraidhoo
-- Guesthouses
-- Diving centers
-
-
-Requires:
-category
-
-
-5. semantic
-
-User describes something but does not mention a specific business.
-
-Examples:
-
-- Romantic place for dinner
-- Cheap accommodation
-- Best sunset spot
-- Family friendly activities
-
-
-Requires vector search.
-
-
-
-Return format:
-
-
+VALID CATEGORY TO SUBCATEGORY MAPPINGS:
 {
-"type":"general",
-"name":null,
-"category":null,
-"subCategory: "null"
+${categoryText}
 }
+do not create any CATEGORY to SUBCATEGORY on your own.
 
+INTENT TYPES & RULES:
+1. "knowledge": ONLY for broad, general, or encyclopedia-style facts about Guraidhoo island itself (e.g., location, history, population, weather, local laws, customs, currency). If they want a business, service, place to visit, or activity. if conversation has any matching category dont return knowledge as type.
+2. "single": The user mentions a specific, identifiable name of a business, venue, or service. Extract the exact name into the "name" field.
+3. "category": The user wants to see multiple options from a specific category. 
+   * CRITICAL PARENT-CHILD RULE: The "subCategory" must strictly belong to the chosen "category" based on the mappings provided above. Never mix a subcategory from one category into another. If a category has no subcategories or the specific subcategory isn't clear, set "subCategory" to default.
+   * GOVERNMENT EMERGENCY EXCEPTION: If they mention terms like "police", "doctor", "hospital", "clinic", "office", "stolen", or "emergency", immediately route to category="organization" and subCategory="government".
+4. "semantic": The user describes qualities, preferences, budgets, or attributes rather than naming a specific category or place (e.g., "cheap stay", "romantic dinner"). Default to this if unclear.and when user is trying to find alternatives
 
-Rules:
-
-- If a specific business name exists, choose "single".
-- If user wants multiple options, choose "category".
-- If the request needs business data but cannot be solved by category filtering, choose "semantic".
-- Never choose semantic for general questions.
-- Keep names exactly as user wrote them.
-`;
-
+OUTPUT SCHEMA:
+{
+  "type": "knowledge" | "single" | "category" | "semantic",
+  "name": string | null,
+  "category": string | null,
+  "subCategory": string | null
+}`;
 
   try {
-    // 1. Build the complete message history with the classification system instructions first
+    // Token Saver: Only take the last 2 messages for immediate conversational context
+    const recentHistory = conversation.slice(-2);
+
     const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
-      {
-        role: "system",
-        content: classifierPrompt,
-      },
-      ...conversation, // Spreads previous back-and-forth turns
-      {
-        role: "user",
-        content: message, // Appends the latest message to classify
-      },
+      { role: "system", content: classifierPrompt },
+      ...recentHistory,
+      { role: "user", content: message },
     ];
 
-    // 2. Execute the completion using strict JSON schema validation
     const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini", // Standard chat completion models work best with conversation parameters
+      model: "gpt-4.1-nano", 
       messages: messages,
-      // response_format: {
-      //   type: "json_schema",
-      //   json_schema: {
-      //     name: "intent_classifier",
-      //     strict: true,
-      //     schema: {
-      //       type: "object",
-      //       additionalProperties: false,
-      //       properties: {
-      //         list: {
-      //           type: ["object", "null"],
-      //           properties: {
-      //             category: { type: "string" },
-      //             subCategory: { type: "string" },
-      //           },
-      //           required: ["category", "subCategory"],
-      //           additionalProperties: false,
-      //         },
-      //         aboutIsland: { type: "boolean" },
-      //         more: {
-      //           type: ["object", "null"],
-      //           properties: {
-      //             category: { type: "string" },
-      //             subCategory: { type: "string" },
-      //           },
-      //           required: ["category", "subCategory"],
-      //           additionalProperties: false,
-      //         },
-      //         single: {
-      //           type: ["object", "null"],
-      //           properties: {
-      //             name: { type: "string", description: "try to get the best name of place/type/activity from the user message." },
-      //           },
-      //           required: ["name"],
-      //           additionalProperties: false,
-      //         },
-      //       },
-      //       required: ["list", "aboutIsland", "more", "single"],
-      //     },
-      //   },
-      // },
-      response_format: {
-        type: "json_object",
-      },
+      temperature: 0, // Set to 0 for maximum deterministic accuracy
+      response_format: { type: "json_object" },
     });
 
     const content = response.choices[0].message.content;
-    if (!content) throw new Error("Empty response from OpenAI");
+    if (!content) throw new Error("Empty response");
 
-    return JSON.parse(content) as IntentClassification;
+    return JSON.parse(content.trim()) as IntentClassification;
   } catch (error) {
     console.error("Intent classification error:", error);
     return {
-      type: "general",
+      type: "semantic", // Fallback to semantic as requested by your original rules
       name: null,
       category: null,
       subCategory: null,
@@ -620,7 +528,6 @@ Dress Code: When walking through the village, respect the locals by keeping your
         input: question,
       });
       const vector = embeddingResponse.data[0].embedding;
-console.log(vector)
       // 2. Optimized vector aggregation with tight projection limit
       const docs = await Listing.aggregate([
         {
@@ -659,7 +566,7 @@ console.log(vector)
 }
 
 export async function CATEGORY_META_CONFIGS() {
-  "use cache"
+    "use cache"
   await connectDB();
 
   const items = await metaConfig.find();
@@ -689,4 +596,32 @@ export async function CATEGORY_META_CONFIGS() {
   });
 
   return structuredTree;
+}
+
+export async function getNotice(){
+
+    await connectDB();
+
+
+    const res = await Notice
+        .find({
+            isActive:true
+        })
+        .sort({
+            createdAt:-1
+        });
+if(!res){
+  return []
+}
+
+const data = res.map((res)=>{
+  return {
+    _id: res._id.toString(),
+    message: res.message,
+    type: res.type,
+    title: res.title
+  }
+})
+
+    return data;
 }

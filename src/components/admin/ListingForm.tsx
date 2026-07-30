@@ -212,7 +212,7 @@ export default function ListingForm({ initialData, categories }: ListingFormProp
                 coordinates: { lat: "", lng: "" },
             },
             images: [],
-            metadata: getDefaultMeta("food-and-beverage", "default"),
+            metadata: getDefaultMeta("food-and-beverage", "restaurant"),
             active: false
             })
             
@@ -581,12 +581,9 @@ const otherFields = dynamicFields.filter((f) => !isBooleanField(f));
         <CardContent className="p-6 space-y-4">
           <div className="space-y-1">
             <Label className="text-base font-medium">{field.label}</Label>
-
-            {field.placeholder && (
-              <p className="text-sm text-muted-foreground">
-                {field.placeholder}
+            <p className="text-sm text-muted-foreground">
+                Add details below for {field.label.toLowerCase()}.
               </p>
-            )}
           </div>
 
           {field.type === "textarea" ? (
@@ -698,31 +695,12 @@ const otherFields = dynamicFields.filter((f) => !isBooleanField(f));
             </div>
           )}
 
-          <div className="space-y-4">
+          <div className="space-y-4 flex flex-wrap gap-4 w-full">
             {arr.map((item: any, index: number) => (
-              <Card key={index} >
-                <CardContent className="p-5 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-medium">
-                      {field.label} #{index + 1}
-                    </h4>
-
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => {
-                        const updated = arr.filter(
-                          (_: any, i: number) => i !== index
-                        );
-                        updateMeta(field.key, updated);
-                      }}
-                    >
-                      Remove
-                    </Button>
-                  </div>
-
-                  <div className="grid gap-4 md:grid-cols-2">
+              <Card key={index} className="bg-muted/40 w-full md:w-72 max-h-fit">
+                <CardContent className="space-y-4">
+               
+                  <div className="space-y-4">
                     {field.itemSchema.map((subField) => (
                       <div
                         key={subField.key}
@@ -732,7 +710,24 @@ const otherFields = dynamicFields.filter((f) => !isBooleanField(f));
                             : "space-y-2"
                         }
                       >
-                        <Label>{subField.label}</Label>
+                        <div className="flex justify-between">
+                        <Label>{field.label}- #{index + 1}</Label>
+                          <Button
+                      type="button"
+                      size="icon-sm"
+                      variant="destructive"
+                      onClick={() => {
+                        const updated = arr.filter(
+                          (_: any, i: number) => i !== index
+                        );
+                        updateMeta(field.key, updated);
+                      }}
+                    >
+                      <Trash />
+                    </Button>
+                        </div>
+                        
+                        <div className="flex items-center gap-x-4">
 
                         {subField.type === "textarea" ? (
                           <Textarea
@@ -772,10 +767,15 @@ const otherFields = dynamicFields.filter((f) => !isBooleanField(f));
 
                               updateMeta(field.key, updated);
                             }}
+                            className="w-full"
                           />
                         )}
+
+                           
+                    </div>
                       </div>
                     ))}
+                  
                   </div>
                 </CardContent>
               </Card>

@@ -1,23 +1,20 @@
 import { getMetaConfigs } from "@/app/action";
 import MetaConfigTable from "@/components/admin/meta-config/DataTable";
-import { cacheLife, cacheTag } from "next/cache";
+import { Suspense } from "react";
 
 
 
-
-
-
-export default async function Page(){
+export default async function Page() {
   const configs = await getMetaConfigs();
 
-
-
-
   return (
-<div className="w-full">
-   <MetaConfigTable data={configs} />
-</div>
- 
-  )
+  
+      <Suspense fallback={<p>Loading....</p>}>
+         <div className="w-full">
+<MetaConfigTable data={configs} />
+         </div>
+   
+      </Suspense>
 
+  );
 }

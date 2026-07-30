@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 
 import { Badge } from "@/components/ui/badge";
 
@@ -84,7 +84,7 @@ text-muted-foreground
                 </div>
               </AccordionTrigger>
 
-              <AccordionContent className="px-3 h-fit! bg-background">
+              <AccordionContent className="px-3 h-fit!">
                 <div className="pt-3 pb-2">
                   <FieldForm
                     value={field}

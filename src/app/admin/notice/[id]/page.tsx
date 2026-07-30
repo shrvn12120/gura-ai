@@ -9,7 +9,7 @@ interface EditPageProps {
   params: Promise<{ id: string }>;
 }
 
-export default async function EditListingPage({ params }: EditPageProps) {
+export default async function EditNoticePage({ params }: EditPageProps) {
   const { id } = await params;
   await connectDB();
 

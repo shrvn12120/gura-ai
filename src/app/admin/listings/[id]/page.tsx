@@ -3,13 +3,17 @@ import ListingForm, { ListingFormData } from "@/components/admin/ListingForm";
 import connectDB from "@/lib/mongodb";
 import Listing from "@/models/Listing";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 
 interface EditPageProps {
   params: Promise<{ id: string }>;
 }
 
 export default async function EditListingPage({ params }: EditPageProps) {
-  const { id } = await params;
+  'use cache'; 
+
+ const x = await CATEGORY_META_CONFIGS()
+   const { id } = await params;
   await connectDB();
 
   const rawListing = await Listing.findById(id).lean();
@@ -41,11 +45,14 @@ export default async function EditListingPage({ params }: EditPageProps) {
     metadata: (rawListing.metadata as Record<string, any>) || {},
   };
 
- const x = await CATEGORY_META_CONFIGS()
-
   return(
-      <div className='w-full'>
-       <ListingForm initialData={preparedData} categories={x}/>
-      </div>
+     
+        <Suspense>
+           <div className='w-full'>
+          <ListingForm initialData={preparedData} categories={x}/>
+          </div>
+        </Suspense>
+       
+
     )
 }

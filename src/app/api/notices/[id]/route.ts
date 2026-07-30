@@ -8,36 +8,6 @@ type RouteContext = {
 
 
 
-// // UPDATE
-
-// type RouteContext = {
-//   params: Promise<{ id: string }>;
-// };
-
-// export async function PATCH(
-//     req:NextRequest,
-//     context: RouteContext
-// ){
-
-//     await connectDB();
-
-//     const { id }= await context.params
-//     const body = await req.json();
-
-
-
-//     const notice =
-//         await Notice.findByIdAndUpdate(
-//             id,
-//             body,
-//             {
-//                 new:true
-//             }
-//         );
-
-
-//     return NextResponse.json(notice);
-// }
 
 export async function PATCH(
   req: NextRequest,
@@ -74,6 +44,7 @@ export async function PATCH(
     }
 
        revalidatePath("/admin/notice")
+    revalidatePath("/")
 
     // 7. Return the updated document
     return NextResponse.json(notice);

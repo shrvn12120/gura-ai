@@ -19,7 +19,7 @@ async function Informations() {
             createdAt:-1
         });
   return (
-      <Suspense fallback={<div>Loading...</div>}>
+     
 
 
     <div className="w-full">
@@ -84,7 +84,7 @@ async function Informations() {
         )}
       </div>
     </div>
-   </Suspense>
+  
   )
 }
 
@@ -93,6 +93,8 @@ export default async function Page() {
 
 
   return (
+     <Suspense fallback={<div>Loading...</div>}>
    <Informations />
+   </Suspense>
   );
 }

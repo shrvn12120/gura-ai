@@ -1,6 +1,7 @@
 import { Separator } from "@/components/ui/separator";
 
-export default function AdminPage() {
+export default async function AdminPage() {
+
   return (
     <div className="w-full">
       <div className="flex justify-between items-center">

@@ -5,7 +5,7 @@ import connectDB from "@/lib/mongodb";
 import MetaConfig from "@/models/MetaConfig";
 
 import { z } from "zod";
-import { revalidateTag } from "next/cache";
+import { revalidatePath } from "next/cache";
 
 const UpdateSchema = z.object({
   action: z.enum([
@@ -144,7 +144,8 @@ export async function PATCH(
         },
       );
     }
- revalidateTag("meta-config", "max")
+     revalidatePath("/admin", "layout")
+     revalidatePath("/", "layout")
     return NextResponse.json(updated);
   } catch (error: any) {
     return NextResponse.json(
@@ -184,7 +185,8 @@ export async function DELETE(
         },
       );
     }
- revalidateTag("meta-config", "max")
+    revalidatePath("/admin", "layout")
+    revalidatePath("/", "layout")
     return NextResponse.json({
       message: "Deleted successfully",
     });

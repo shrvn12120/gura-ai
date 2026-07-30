@@ -20,6 +20,7 @@ import { MetaField, FieldType } from "./types";
 import SelectOptionsBuilder from "./SelectOptionsBuilder";
 import FieldBuilder from "./FieldBuilder";
 import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
 
 interface Props {
   value: MetaField;
@@ -72,6 +73,22 @@ export default function FieldForm({ value, onChange, onDelete }: Props) {
         </div>
       </div>
 
+      {
+         value.type === "string" || value.type === "textarea"  && (
+           <div className="space-y-2">
+          <Label>Place holder text</Label>
+
+          <Textarea
+            placeholder="Describe whats the purpose."
+            value={value?.placeholder}
+            onChange={(e) => update("placeholder", e.target.value)}
+          />
+        </div>
+        )
+      }
+
+       
+
       <div className="space-y-2">
         <Label>Field Type</Label>
 
@@ -105,7 +122,7 @@ export default function FieldForm({ value, onChange, onDelete }: Props) {
       {value.type === "array" && (
        
         <div className="pt-4 border-t space-y-4">
-          <Label className="mb-6 block">Array Item Schema</Label>
+          <Label className="mb-6 block">Item list</Label>
 
           <FieldBuilder
             fields={value.itemSchema ?? []}
