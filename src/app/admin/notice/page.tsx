@@ -1,23 +1,20 @@
 import Link from "next/link";
-import connectDB from "@/lib/mongodb";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Plus } from "lucide-react"; // Optional: Adds a nice plus icon to your button
 import { Separator } from "@/components/ui/separator";
-import Notice, { INotice } from "@/models/Notice";
+import  { INotice } from "@/models/Notice";
 import { Badge } from "@/components/ui/badge";
 import { Suspense } from "react";
+import { getAllNotices } from "@/app/action";
 
 
 
 async function Informations() {
 "use cache"
-  await connectDB();
- const listings = await Notice
-        .find()
-        .sort({
-            createdAt:-1
-        });
+
+ const listings = await getAllNotices()
   return (
      
 
@@ -50,12 +47,12 @@ async function Informations() {
           </p>
         ) : (
           listings?.map((item: INotice) => (
-            <Link key={item?._id?.toString() || ""} href={`/admin/notice/${item._id}`}>
+            <Link key={item.id?.toString() || ""} href={`/admin/notice/${item.id}`}>
               <Card className="h-full hover:bg-accent/50 transition-colors cursor-pointer shadow-sm">
                 <CardHeader>
                   <CardTitle className="line-clamp-1 text-lg">
                     {item.title} {
-                      item.isActive? 
+                      item.is_active? 
                       <Badge variant={"default"}>Active</Badge>:<Badge variant={"destructive"}>In Active</Badge>
                     }
                    

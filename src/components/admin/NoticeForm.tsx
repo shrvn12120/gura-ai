@@ -29,14 +29,15 @@ export default function NoticeForm({ initialData }: NoticeFormProps) {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
 
-    const isEditMode = !!initialData?._id;
+    const isEditMode = !!initialData?.id;
 
     const [form, setForm] = useState<INotice>({
+        id: initialData?.id || "",
         title: initialData?.title || "",
         message: initialData?.message || "",
         type: initialData?.type || "announcement" as NoticeType,
         priority: initialData?.priority || "low" as NoticePriority,
-        isActive: initialData?.isActive || false,
+        is_active: initialData?.is_active || false,
     });
 
 
@@ -52,7 +53,7 @@ export default function NoticeForm({ initialData }: NoticeFormProps) {
             setLoading(true);
 
             // Select PUT strategy if editing an existing ID, otherwise default to POST creation block
-            const endpoint = isEditMode ? `/api/notices/${initialData._id}` : "/api/notices";
+            const endpoint = isEditMode ? `/api/notices/${initialData.id}` : "/api/notices";
             const method = isEditMode ? "PATCH" : "POST";
 
             const res = await fetch(endpoint, {
@@ -105,13 +106,13 @@ export default function NoticeForm({ initialData }: NoticeFormProps) {
                                     </div>
                                     
                                     <div className="flex items-center space-x-2">
-      <Switch id="isActive" defaultChecked={form.isActive} onCheckedChange={(e) =>{
+      <Switch id="isActive" defaultChecked={form.is_active} onCheckedChange={(e) =>{
                                                   setForm((prev) => {
             const updated: any = { ...prev, isActive: e };
             return updated;
         });
                                            }}/>
-      <Label htmlFor="isActive">Status {form.isActive? 'Active': 'In active'}</Label>
+      <Label htmlFor="isActive">Status {form.is_active? 'Active': 'In active'}</Label>
     </div>
                                 </div>
                                 <div className="grid gap-4 sm:grid-cols-2">

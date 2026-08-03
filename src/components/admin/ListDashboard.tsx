@@ -29,7 +29,7 @@ interface Listing {
     _id: string;
     title: string;
     category: string;
-    subCategory?: string;
+    subcategory?: string;
     active?: boolean
 }
 
@@ -52,7 +52,7 @@ export default function ListingsClient({ listings, categories }: Props) {
                 search === "" ||
                 item.title?.toLowerCase().includes(search.toLowerCase()) ||
                 item.category?.toLowerCase().includes(search.toLowerCase()) ||
-                item.subCategory?.toLowerCase().includes(search.toLowerCase());
+                item.subcategory?.toLowerCase().includes(search.toLowerCase());
 
         
 
@@ -60,7 +60,7 @@ export default function ListingsClient({ listings, categories }: Props) {
                 category === "all" || item.category === category;
 
             const matchesSubCategory =
-                subCategory === "all" || item.subCategory === subCategory;
+                subCategory === "all" || item.subcategory === subCategory;
 
                         
 
@@ -229,11 +229,11 @@ export default function ListingsClient({ listings, categories }: Props) {
 
                                     <CardDescription>
                                         <span className="uppercase font-semibold tracking-wide text-muted-foreground text-xs">
-                                            {item.category.split("-").join(" ")} {" "} ({item.subCategory && (
+                                            {item.category.split("-").join(" ")} {" "} ({item.subcategory && (
                                             <>
                                               
                                                 <small className="">
-                                                    {item.subCategory}
+                                                    {item.subcategory}
                                                 </small>
                                             </>
                                         )})

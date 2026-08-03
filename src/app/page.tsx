@@ -1,7 +1,6 @@
 import ChatUi from '@/components/chat-ui'
-
 import  { Suspense } from 'react'
-import { getNotice } from './action';
+import { getActiveNotices } from './action'
 
 type Props = {}
 
@@ -11,7 +10,7 @@ const Chat = async (props: Props) => {
   "use cache"
 
 
- const notices = await getNotice()
+ const notices = await getActiveNotices()
   return (
 
       

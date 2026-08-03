@@ -15,12 +15,12 @@ export type NoticePriority =
 
 
 export interface INotice {
-    _id?:string;
+  id:string;
   title: string;
   message: string;
   type: NoticeType;
   priority: NoticePriority;
-  isActive: boolean;
+  is_active: boolean;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -61,7 +61,7 @@ const NoticeSchema = new Schema<INotice>(
       default: "medium",
     },
 
-    isActive: {
+    is_active: {
       type: Boolean,
       default: true,
     },

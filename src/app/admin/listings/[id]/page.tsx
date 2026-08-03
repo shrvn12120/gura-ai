@@ -1,4 +1,4 @@
-import { CATEGORY_META_CONFIGS } from "@/app/action";
+import { CATEGORY_META_CONFIGS, getListingsById } from "@/app/action";
 import ListingForm, { ListingFormData } from "@/components/admin/ListingForm";
 import connectDB from "@/lib/mongodb";
 import Listing from "@/models/Listing";
@@ -16,35 +16,24 @@ export default async function EditListingPage({ params }: EditPageProps) {
    const { id } = await params;
   await connectDB();
 
-  const rawListing = await Listing.findById(id).lean();
+  const rawListing = await getListingsById(id);
   if (!rawListing) return notFound();
+
+ 
 
   // Convert array back into a comma-separated string for form compatibility
   const preparedData: ListingFormData = {
-    _id: String(rawListing._id),
+    _id: String(rawListing.id),
     title: String(rawListing.title || ""),
     slug: String(rawListing.slug || ""),
     category: String(rawListing.category || ""),
-    subCategory: String(rawListing.subCategory || ""),
+    subCategory: String(rawListing.subcategory || ""),
     description: String(rawListing.description || ""),
-    contact_info: {
-      address: String(rawListing.contact_info.address || ""),
-      email: String(rawListing.contact_info?.email || ""),
-      phone: String(rawListing.contact_info?.phone || ""),
-      whatsapp: String(rawListing.contact_info?.whatsapp || ""),
-      socials: Array.isArray(rawListing.contact_info?.socials) ? rawListing.contact_info.socials : [],
-      coordinates: {
-        lat: String(rawListing.contact_info.coordinates.lat || 0),
-        lng: String(rawListing.contact_info.coordinates.lng || 0),
-      }
-
-    },
+    contact_info: rawListing.contact_info,
     active: rawListing.active,
-
     images: rawListing.images,
     metadata: (rawListing.metadata as Record<string, any>) || {},
   };
-
   return(
      
         <Suspense>
