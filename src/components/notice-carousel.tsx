@@ -32,22 +32,30 @@ export interface Notice {
   type: NoticeType;
 }
 
-const noticeStyles = {
+export const noticeStyles = {
   event: {
     badge: "destructive" as const,
     border: "border-destructive",
+    text: "text-destructive",
+    color: "bg-destructive"
   },
   announcement: {
     badge: "default" as const,
     border: "border-primary",
+    text: "text-primary",
+    color: "bg-primary"
   },
   warning: {
     badge: "secondary" as const,
     border: "border-yellow-500",
+    text: "text-yellow-500",
+    color: "bg-yellow-500"
   },
   info: {
     badge: "outline" as const,
     border: "border-blue-500",
+    text: "text-blue-500",
+    color: "bg-blue-500"
   },
 };
 

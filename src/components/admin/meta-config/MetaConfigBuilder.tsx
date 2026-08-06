@@ -108,7 +108,7 @@ export default function MetaConfigBuilder({
 
         const res =
             await fetch(
-                `/api/meta-configs/${selected._id}`,
+                `/api/meta-configs/${selected.id}`,
                 {
 
                     method: "PATCH",
@@ -144,7 +144,7 @@ export default function MetaConfigBuilder({
 
         setConfigs(prev =>
             prev.map(item =>
-                item._id === updated._id
+                item.id === updated.id
                     ? updated
                     : item
             )
@@ -187,7 +187,7 @@ export default function MetaConfigBuilder({
                     {
                         configs.map(config => (
 <Button variant={"outline"} asChild>
-<Link  className="capitalize" href={`/admin/config/meta-configs/${config._id}`}>{config.category.split("-").join(" ")}</Link>
+<Link  className="capitalize" href={`/admin/config/meta-configs/${config.id}`}>{config.category.split("-").join(" ")}</Link>
 </Button>
                         ))
                     }
@@ -212,7 +212,7 @@ export default function MetaConfigBuilder({
                     selectedCategory={selected.category.split("-").join(" ")}
 
                         items={
-                            selected.subCategories
+                            selected.sub_categories
                         }
 
                         onChange={

@@ -113,17 +113,17 @@ export default function MetaConfigTable({
               filtered.sort((a, b) =>
     a.category.localeCompare(b.category)
   ).map((config) => (
-                <TableRow key={config._id} className="even:bg-accent/50">
+                <TableRow key={config.id} className="even:bg-accent/50">
                   <TableCell className="text-sm font-light capitalize">
                     {config.category.replaceAll("-", " ")}
                   </TableCell>
 
                   <TableCell>
-                    {config.subCategories.length}
+                    {config.sub_categories.length}
                   </TableCell>
 
                   <TableCell>
-                    {config.subCategories.reduce(
+                    {config.sub_categories.reduce(
                       (total, sub) =>
                         total + sub.fields.length,
                       0
@@ -144,7 +144,7 @@ export default function MetaConfigTable({
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem asChild>
                           <Link
-                            href={`/admin/config/meta-configs/${config._id}`}
+                            href={`/admin/config/meta-configs/${config.id}`}
                           >
                             Edit
                           </Link>
@@ -154,7 +154,7 @@ export default function MetaConfigTable({
                         disabled
                           className="text-destructive"
                           onClick={() =>
-                            onDelete &&   onDelete(config?._id || "")
+                            onDelete &&   onDelete(config?.id || "")
                           }
                         >
                           Delete

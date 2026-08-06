@@ -42,10 +42,10 @@ export interface SubCategory {
 
 export interface MetaConfig {
 
-  _id?:string;
+  id?:string;
 
   category:string;
 
-  subCategories:SubCategory[];
+  sub_categories:SubCategory[];
 
 }

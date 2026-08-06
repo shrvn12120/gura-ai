@@ -1,53 +1,3 @@
-// import { NextRequest, NextResponse } from "next/server";
-// import connectDB  from "@/lib/mongodb";
-// import Notice from "@/models/Notice";
-// import { revalidatePath } from "next/cache";
-
-
-// // GET ALL
-
-// export async function GET(){
-
-//     await connectDB();
-
-//     const notices = await Notice
-//         .find({
-//             isActive:true
-//         })
-//         .sort({
-//             createdAt:-1
-//         });
-
-
-//     return NextResponse.json(notices);
-// }
-
-
-
-// // CREATE
-
-// export async function POST(
-//     req:NextRequest
-// ){
-
-//     await connectDB();
-
-
-//     const body = await req.json();
-
-
-//     const notice = await Notice.create(body);
-//     revalidatePath("/admin/notice")
-//     revalidatePath("/")
-
-//     return NextResponse.json(
-//         notice,
-//         {
-//             status:201
-//         }
-//     );
-// }
-
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
@@ -55,9 +5,22 @@ import { db } from "@/lib/db";
 
 // GET ALL ACTIVE NOTICES
 
-export async function GET() {
+export async function GET(req:NextRequest) {
 
   try {
+    const origin = req.headers.get("origin");
+    const isAllowedOrigin = process.env.NODE_ENV === "development" ? origin ==="http://localhost:3000" : origin ==="https://ai.devemm.com";
+    
+    if(!isAllowedOrigin) {
+      return Response.json(
+        {
+          error: "Your not authorized to access this API endpoint contact emm",
+        },
+        {
+          status: 403,
+        }
+      );
+    }
 
     const result = await db.query(
       `
@@ -111,6 +74,19 @@ export async function POST(
 ){
 
   try {
+     const origin = req.headers.get("origin");
+    const isAllowedOrigin = process.env.NODE_ENV === "development" ? origin ==="http://localhost:3000" : origin ==="https://ai.devemm.com";
+    
+    if(!isAllowedOrigin) {
+      return Response.json(
+        {
+          error: "Your not authorized to access this API endpoint contact emm",
+        },
+        {
+          status: 403,
+        }
+      );
+    }
 
     const body = await req.json();
 

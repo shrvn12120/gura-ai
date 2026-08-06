@@ -6,8 +6,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar } from "@/components/ui/avatar";
 import { Sparkles, ArrowUp, Compass } from "lucide-react";
 import Image from "next/image";
-import NoticeCarousel, { Notice } from "./notice-carousel";
+import NoticeCarousel, { Notice, noticeStyles } from "./notice-carousel";
 import MarkdownMessage from "./markdown-message";
+import { getSessionId } from "@/lib/session";
 
 type Message = {
   role: "user" | "assistant";
@@ -18,6 +19,7 @@ interface Props {
 }
 
 export default function ChatUi({ notices }: Props) {
+  const sessionId = getSessionId();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -80,6 +82,7 @@ export default function ChatUi({ notices }: Props) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          sessionId,
           messages: updatedMessagesPayload,
         }),
       });
@@ -139,17 +142,35 @@ export default function ChatUi({ notices }: Props) {
       {/* HEADER */}
       <header className="sticky top-0 z-50 flex items-center justify-between border-b border-zinc-200/80 dark:border-zinc-800/80 bg-white/80 dark:bg-zinc-950/80 px-6 py-4 backdrop-blur-md">
         <div className="flex items-center gap-2.5 mx-auto w-full max-w-2xl">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-cyan-500/10 text-cyan-600 dark:text-cyan-400">
+          {/* <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-cyan-500/10 text-cyan-600 dark:text-cyan-400">
             <Compass className="h-5 w-5" />
-          </div>
+          </div> */}
+           <Avatar className="h-8 w-8 shrink-0 select-none items-center justify-center rounded-lg border border-cyan-200 dark:border-cyan-900 bg-cyan-50 dark:bg-cyan-950 text-cyan-600 dark:text-cyan-400 shadow-sm">
+                  <Image
+                    alt="Logo"
+                    src={"/web-app-manifest-512x512.png"}
+                    width={100}
+                    height={100}
+                    className="rounded-md"
+                  />
+                </Avatar>
           <div>
             <h1 className="text-sm font-semibold tracking-tight">
               Explore guraidhoo | Chat
             </h1>
-            <p className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+           
+            {
+              notices?.length >= 1 ? (
+                <p className={`text-[11px] font-medium flex items-center gap-1  ${noticeStyles[notices[0].type].text}`}>
+                  <span className={`h-1.5 w-1.5 rounded-full ${noticeStyles[notices[0].type].color} animate-pulse`} />
+                  There is active {notices[0].type}. Check it out!
+                </p>
+              ): 
+              <p className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
               Island Expert Online
-            </p>
+            </p> 
+            }
           </div>
         </div>
       </header>
@@ -198,7 +219,7 @@ export default function ChatUi({ notices }: Props) {
                 <Avatar className="h-8 w-8 shrink-0 select-none items-center justify-center rounded-lg border border-cyan-200 dark:border-cyan-900 bg-cyan-50 dark:bg-cyan-950 text-cyan-600 dark:text-cyan-400 shadow-sm">
                   <Image
                     alt="Logo"
-                    src={"/favicon.svg"}
+                    src={"/web-app-manifest-512x512.png"}
                     width={100}
                     height={100}
                     className="rounded-md"
@@ -207,7 +228,7 @@ export default function ChatUi({ notices }: Props) {
               )}
 
               {msg.role === "user" ? (
-                <div className="max-w-[85%] rounded-2xl bg-zinc-900 px-4 py-2.5 text-sm text-zinc-50 shadow-sm dark:bg-zinc-200 dark:text-zinc-950 selection:bg-zinc-700">
+                <div className="max-w-[85%] rounded-2xl bg-zinc-50 px-4 py-2.5 text-sm text-zinc-900 shadow-sm dark:bg-zinc-900 dark:text-zinc-50 selection:bg-zinc-700">
                   <p className="leading-relaxed whitespace-pre-wrap">
                     {msg.content}
                   </p>

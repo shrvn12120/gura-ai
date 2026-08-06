@@ -10,9 +10,9 @@ const page = async ({ params }: Props) => {
   const { id } = await params;
   const data = await getMetaConfigById(id);
   const meta: MetaConfig = {
-    _id: data._id,
+    id: data.id,
     category: data.category,
-    subCategories: data.sub_categories,
+    sub_categories: data.sub_categories,
   };
 
   return (

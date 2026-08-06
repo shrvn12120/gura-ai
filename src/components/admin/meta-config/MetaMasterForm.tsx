@@ -14,7 +14,7 @@ export default function MetaMasterForm({ initialData }: Props) {
   const [config, setConfig] = useState<MetaConfig>(initialData);
 
   async function updateSubCategories(subCategories: SubCategory[]) {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/meta-configs/${config._id}`, {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/meta-configs/${config.id}`, {
       method: "PATCH",
 
       headers: {
@@ -45,7 +45,7 @@ export default function MetaMasterForm({ initialData }: Props) {
     <div className="w-full">
       <SubCategoryList
         selectedCategory={config.category.split("-").join(" ")}
-        items={config.subCategories ?? []}
+        items={config.sub_categories ?? []}
         onChange={updateSubCategories}
       />
     </div>

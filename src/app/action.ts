@@ -56,8 +56,8 @@ export async function CATEGORY_META_CONFIGS() {
     }
 
     // 2. Safely check if subCategories array exists on this document record
-    if (Array.isArray(item.subCategories)) {
-      item.subCategories.forEach((subCat: any) => {
+    if (Array.isArray(item.sub_categories)) {
+      item.sub_categories.forEach((subCat: any) => {
         // Use the subcategory's name as the key (e.g., "restaurant")
         const subCategoryKey = subCat.name || "default";
 

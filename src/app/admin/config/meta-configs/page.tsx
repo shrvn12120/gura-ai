@@ -1,6 +1,5 @@
 import MetaConfigTable from "@/components/admin/meta-config/DataTable";
 import { db } from "@/lib/db";
-import connectDB from "@/lib/mongodb";
 import MetaConfig from "@/models/MetaConfig";
 import { Suspense } from "react";
 
