@@ -1,7 +1,5 @@
 import { CATEGORY_META_CONFIGS, getListingsById } from "@/app/action";
 import ListingForm, { ListingFormData } from "@/components/admin/ListingForm";
-import connectDB from "@/lib/mongodb";
-import Listing from "@/models/Listing";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
@@ -14,7 +12,7 @@ export default async function EditListingPage({ params }: EditPageProps) {
 
  const x = await CATEGORY_META_CONFIGS()
    const { id } = await params;
-  await connectDB();
+
 
   const rawListing = await getListingsById(id);
   if (!rawListing) return notFound();

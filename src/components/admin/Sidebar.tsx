@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, Building2, BookOpen } from "lucide-react";
+import { LayoutDashboard, Building2, BookOpen, MessageCircleMoreIcon } from "lucide-react";
 import { ThemeChanger } from "../theme-toggle";
 
 export default function SidebarMenu() {
@@ -36,6 +36,13 @@ export default function SidebarMenu() {
       icon: BookOpen,
       active: pathname.startsWith("/admin/config/meta-configs"),
     },
+    {
+      label: "Conversations",
+      href: "/admin/conversations",
+      icon: MessageCircleMoreIcon,
+      active: pathname.startsWith("/admin/conversations"),
+    },
+    // conversations
   ];
 
   return (
