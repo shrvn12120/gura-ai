@@ -180,38 +180,48 @@ export async function getNoticeById(id: string) {
   return result.rows[0];
 }
 
-
 export async function getConversationHistory(conId: string) {
-const conversation = await fetch(`https://api.openai.com/v1/conversations/${conId}/items?include[]=message.input_image.image_url&include[]=computer_call_output.output.image_url&include[]=file_search_call.results&order=desc`, {
-  method: "GET",
-  headers: {
-    "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
-    "Content-Type": "application/json",
-    "openai-project": "proj_8ewh1krDbm88VZ6yAcO1JlIx",
-  },
-});
+  // Add &limit=100 to fetch more than the default 20 items
+  const conversation = await fetch(
+    `https://api.openai.com/v1/conversations/${conId}/items?limit=100&include[]=message.input_image.image_url&include[]=computer_call_output.output.image_url&include[]=file_search_call.results&order=desc`,
+    {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+        "Content-Type": "application/json",
+        "openai-project": "proj_8ewh1krDbm88VZ6yAcO1JlIx",
+      },
+    }
+  );
 
-const data = await conversation.json();
+  const data = await conversation.json();
 
+  if (!data.data) {
+    return JSON.stringify([]);
+  }
 
   const history = data.data
-    .filter(
-      (item: any) =>
-        item.type === "message" && item.role !== "developer"
-    )
-    .map((item: any) => ({
-      role: item.role,
-      content: item.content?.[0]?.text ?? "",
-    }))
-    .reverse();
-return JSON.stringify(history);
+    .filter((item: any) => item.type === "message" && item.role !== "developer")
+    .map((item: any) => {
+      // Safely extract text content regardless of content array structure
+      let text = "";
+      if (typeof item.content === "string") {
+        text = item.content;
+      } else if (Array.isArray(item.content)) {
+        text = item.content.find((c: any) => c.type === "text")?.text ?? item.content?.[0]?.text ?? "";
+      }
 
+      return {
+        role: item.role,
+        content: text,
+      };
+    })
+    .filter((item: any) => item.content.trim() !== "") // Remove empty artifacts
+    .reverse(); // Put back into chronological order
+
+  return JSON.stringify(history);
 }
-
  export  async function getAllConversationHistory() {
-
-
-
 const conversation = await fetch(`https://api.openai.com/v1/dashboard/conversations`, {
   method: "GET",
   headers: {

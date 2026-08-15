@@ -26,7 +26,7 @@ export default async function ShowConvPage({ params }: EditPageProps) {
   let data;
   try {
     const conversation = await fetch(
-      `https://api.openai.com/v1/conversations/${id}/items`,
+      `https://api.openai.com/v1/conversations/${id}/items?limit=100`,
       {
         method: "GET",
         headers: {

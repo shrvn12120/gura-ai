@@ -6,148 +6,22 @@
 //   apiKey: process.env.OPENAI_API_KEY!,
 // });
 
-// export async function vectorSearch(
-//   query: string,
-//   limit = 4
-// ) {
-
-//   const normalizedQuery = query
+// function normalizeQuery(query: string) {
+//   return query
 //     .trim()
-//     .toLowerCase();
-
-//   let queryVector: string;
-
-//   // -------------------------
-//   // Check cache
-//   // -------------------------
-
-//   const cached = await db.query(
-//     `
-//     SELECT embedding
-//     FROM query_embeddings
-//     WHERE query = $1
-//     `,
-//     [normalizedQuery]
-//   );
-
-//   if (cached.rows.length > 0) {
-
-
-//     queryVector = cached.rows[0].embedding;
-
-//      db.query(
-//       `
-//       UPDATE query_embeddings
-//       SET
-//         hits = hits + 1,
-//         last_used_at = NOW()
-//       WHERE query = $1
-//       `,
-//       [normalizedQuery]
-//     );
-
-//   } else {
-
-
-
-//     const embeddingResponse =
-//       await openai.embeddings.create({
-
-//         model: "text-embedding-3-small",
-
-//         input: normalizedQuery,
-
-//       });
-
-//     queryVector =
-//       `[${embeddingResponse.data[0].embedding.join(",")}]`;
-
-//     await db.query(
-//       `
-//       INSERT INTO query_embeddings
-//       (
-//         query,
-//         embedding
-//       )
-//       VALUES
-//       (
-//         $1,
-//         $2::vector
-//       )
-//       `,
-//       [
-//         normalizedQuery,
-//         queryVector,
-//       ]
-//     );
-
-//   }
-
-//   // -------------------------
-//   // Vector Search
-//   // -------------------------
-
-//   const results = await db.query(
-//     `
-//     SELECT
-
-//       id,
-
-//       title,
-
-//       category,
-
-//       subcategory AS "subCategory",
-
-//       description,
-
-//       contact_info,
-
-//       metadata,
-
-//       images,
-
-//       embedding <=> $1::vector AS distance
-
-//     FROM listings
-
-//     WHERE active = true
-
-//     ORDER BY embedding <=> $1::vector
-
-//     LIMIT $2
-//     `,
-//     [
-//       queryVector,
-//       limit,
-//     ]
-//   );
-
-//   return formatListings(results.rows);
-
+//     .toLowerCase()
+//     .replace(/[?!.。,]+$/g, "")
+//     .replace(/\s+/g, " ");
 // }
-
-// ============= new code =============
-
-// import OpenAI from "openai";
-// import { formatListings } from "./list-format";
-// import { db } from "./db";
-
-// const openai = new OpenAI({
-//   apiKey: process.env.OPENAI_API_KEY!,
-// });
 
 // export async function vectorSearch(
 //   query: string,
 //   limit = 4,
 // ) {
-//   const normalizedQuery =
-//     query
-//       .trim()
-//       .toLowerCase();
+//   const normalizedQuery = normalizeQuery(query);
 
 //   if (!normalizedQuery) {
-//     return [];
+//     return "";
 //   }
 
 //   let queryVector: string;
@@ -158,29 +32,28 @@
 //    * --------------------------------------------------
 //    */
 
-//   const cached =
-//     await db.query(
-//       `
-//       SELECT embedding
-//       FROM query_embeddings
-//       WHERE query = $1
-//       LIMIT 1
-//       `,
-//       [normalizedQuery],
-//     );
+//   const cached = await db.query(
+//     `
+//     SELECT embedding
+//     FROM query_embeddings
+//     WHERE query = $1
+//     LIMIT 1
+//     `,
+//     [normalizedQuery],
+//   );
 
 //   /*
+//    * --------------------------------------------------
 //    * CACHE HIT
+//    * --------------------------------------------------
 //    */
-//   if (
-//     cached.rows.length > 0
-//   ) {
-//     queryVector =
-//       cached.rows[0].embedding;
+
+//   if (cached.rows.length > 0) {
+//     queryVector = cached.rows[0].embedding;
 
 //     /*
 //      * Analytics only.
-//      * Don't wait for it.
+//      * Do not wait for it.
 //      */
 //     void db.query(
 //       `
@@ -195,17 +68,16 @@
 //   }
 
 //   /*
+//    * --------------------------------------------------
 //    * CACHE MISS
+//    * --------------------------------------------------
 //    */
 
 //   else {
 //     const embeddingResponse =
 //       await openai.embeddings.create({
-//         model:
-//           "text-embedding-3-small",
-
-//         input:
-//           normalizedQuery,
+//         model: "text-embedding-3-small",
+//         input: normalizedQuery,
 //       });
 
 //     queryVector =
@@ -221,6 +93,7 @@
 //         $1,
 //         $2::vector
 //       )
+//       ON CONFLICT (query) DO NOTHING
 //       `,
 //       [
 //         normalizedQuery,
@@ -235,48 +108,44 @@
 //    * --------------------------------------------------
 //    */
 
-//   const results =
-//     await db.query(
-//       `
-//       SELECT
-//         id,
-//         title,
-//         category,
-//         subcategory AS "subCategory",
-//         description,
-//         contact_info,
-//         metadata,
-//         images,
+//   const results = await db.query(
+//     `
+//     SELECT
+//       id,
+//       title,
+//       category,
+//       subcategory AS "subCategory",
+//       description,
+//       contact_info,
+//       metadata,
+//       images,
 
-//         embedding <=> $1::vector
-//           AS distance
+//       embedding <=> $1::vector AS distance
 
-//       FROM listings
+//     FROM listings
 
-//       WHERE active = true
+//     WHERE active = true
 
-//       ORDER BY
-//         embedding <=> $1::vector
+//     ORDER BY embedding <=> $1::vector
 
-//       LIMIT $2
-//       `,
-//       [
-//         queryVector,
-//         limit,
-//       ],
-//     );
-
-//   return formatListings(
-//     results.rows,
+//     LIMIT $2
+//     `,
+//     [
+//       queryVector,
+//       limit,
+//     ],
 //   );
+
+//   return formatListings(results.rows);
 // }
 import OpenAI from "openai";
-import { formatListings } from "./list-format";
 import { db } from "./db";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!,
 });
+
+const EMBEDDING_MODEL = "text-embedding-3-small";
 
 function normalizeQuery(query: string) {
   return query
@@ -286,21 +155,34 @@ function normalizeQuery(query: string) {
     .replace(/\s+/g, " ");
 }
 
+export type VectorSearchResult = {
+  id: string;
+  title: string;
+  category: string | null;
+  subCategory: string | null;
+  description: string | null;
+  contactInfo: unknown;
+  metadata: unknown;
+  images: unknown;
+  distance: number;
+};
+
 export async function vectorSearch(
   query: string,
   limit = 4,
-) {
-  const normalizedQuery = normalizeQuery(query);
+): Promise<VectorSearchResult[]> {
+  const normalizedQuery =
+    normalizeQuery(query);
 
   if (!normalizedQuery) {
-    return "";
+    return [];
   }
 
   let queryVector: string;
 
   /*
    * --------------------------------------------------
-   * Embedding cache
+   * 1. EMBEDDING CACHE
    * --------------------------------------------------
    */
 
@@ -313,19 +195,20 @@ export async function vectorSearch(
     `,
     [normalizedQuery],
   );
-
   /*
    * --------------------------------------------------
-   * CACHE HIT
+   * 2. CACHE HIT
    * --------------------------------------------------
    */
 
   if (cached.rows.length > 0) {
-    queryVector = cached.rows[0].embedding;
+    queryVector =
+      cached.rows[0].embedding;
 
     /*
      * Analytics only.
-     * Do not wait for it.
+     *
+     * Don't make the user wait for this.
      */
     void db.query(
       `
@@ -341,14 +224,14 @@ export async function vectorSearch(
 
   /*
    * --------------------------------------------------
-   * CACHE MISS
+   * 3. CACHE MISS
    * --------------------------------------------------
    */
 
   else {
     const embeddingResponse =
       await openai.embeddings.create({
-        model: "text-embedding-3-small",
+        model: EMBEDDING_MODEL,
         input: normalizedQuery,
       });
 
@@ -359,13 +242,20 @@ export async function vectorSearch(
       `
       INSERT INTO query_embeddings (
         query,
-        embedding
+        embedding,
+        hits,
+        last_used_at
       )
       VALUES (
         $1,
-        $2::vector
+        $2::vector,
+        0,
+        NOW()
       )
-      ON CONFLICT (query) DO NOTHING
+      ON CONFLICT (query)
+      DO UPDATE SET
+        embedding = EXCLUDED.embedding,
+        last_used_at = NOW()
       `,
       [
         normalizedQuery,
@@ -376,7 +266,7 @@ export async function vectorSearch(
 
   /*
    * --------------------------------------------------
-   * pgvector
+   * 4. PGVECTOR SEARCH
    * --------------------------------------------------
    */
 
@@ -388,7 +278,7 @@ export async function vectorSearch(
       category,
       subcategory AS "subCategory",
       description,
-      contact_info,
+      contact_info AS "contactInfo",
       metadata,
       images,
 
@@ -397,6 +287,7 @@ export async function vectorSearch(
     FROM listings
 
     WHERE active = true
+      AND embedding IS NOT NULL
 
     ORDER BY embedding <=> $1::vector
 
@@ -407,6 +298,26 @@ export async function vectorSearch(
       limit,
     ],
   );
+console.log(results)
+  /*
+   * --------------------------------------------------
+   * 5. RETURN STRUCTURED DATA
+   * --------------------------------------------------
+   *
+   * Don't use formatListings() here.
+   *
+   * The AI tool needs structured data.
+   */
 
-  return formatListings(results.rows);
+  return results.rows.map((row) => ({
+    id: row.id,
+    title: row.title,
+    category: row.category,
+    subCategory: row.category,
+    description: row.description,
+    contactInfo: row.contactInfo,
+    metadata: row.metadata,
+    images: row.images,
+    distance: Number(row.distance),
+  }));
 }
