@@ -69,10 +69,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     <Suspense fallback={<LayoutSkeleton />}>
       <SidebarProvider>
         <AppSidebar />
-        <SidebarTrigger />
-        <div className="w-full space-y-6 flex flex-col items-center mx-auto p-6 overflow-auto">
+        <div className="bg-zinc-50  dark:bg-accent w-full">
+           <SidebarTrigger />
+ <div className="w-full space-y-6 flex flex-col items-center mx-auto p-6 overflow-auto">
+         
           {children}
         </div>
+        </div>
+       
       </SidebarProvider>
     </Suspense>
   )

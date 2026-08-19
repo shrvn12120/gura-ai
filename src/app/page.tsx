@@ -9,7 +9,6 @@ type Props = {}
 const Chat = async (props: Props) => {
   "use cache"
 
-
  const notices = await getActiveNotices()
   return (
 

@@ -22,25 +22,6 @@ export function getSessionId(): string {
   return sessionId;
 }
 
-export function getConversationId(): string | null {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  return localStorage.getItem(
-    CONVERSATION_KEY
-  );
-}
-
-export function clearConversationId() {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  localStorage.removeItem(
-    CONVERSATION_KEY
-  );
-}
 
 export function clearChatSession() {
   if (typeof window === "undefined") {

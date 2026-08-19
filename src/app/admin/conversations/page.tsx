@@ -10,7 +10,7 @@ const Information = async()=>{
 const conversations = await getAllConversationHistory()
 if(!conversations) notFound()
 return(
-    <div className='w-6xl'>
+    <div className='w-full'>
     <ConversationsTable conversations={conversations} />
     </div>
 )
@@ -19,7 +19,7 @@ return(
 const page = async (props: Props) => {
   return (
     <Suspense fallback={
-        <div className='w-6xl'>
+        <div className='w-full'>
     <ConversationsTableSkeleton rowCount={10} />
     </div>}>
        <Information />

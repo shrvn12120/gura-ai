@@ -1,58 +1,61 @@
-"use client"
+"use client";
+
 import { Avatar } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export function MessageSkeleton() {
   return (
-    <div className="space-y-8">
-    <div className="w-full flex items-end  justify-end opacity-100">
-    <Skeleton className="h-10 w-[42%] rounded-2xl" />
-    </div>
-    <div className="flex items-start gap-4 justify-start opacity-60">
-      {/* Assistant avatar */}
-      <Avatar  className="h-8 w-8 shrink-0 select-none items-center justify-center rounded-lg border border-cyan-200 dark:border-cyan-900  shadow-sm text-xs">
-        GAI
-      </Avatar>
+    <div className="space-y-6">
+      {/* First User Message Skeleton */}
+      <div className="w-full flex justify-end">
 
-      {/* Message content */}
-      <div className="max-w-[85%] space-y-2 pt-0.5 w-full">
-        <div className="space-y-3">
-          <Skeleton className="h-2 w-[92%] rounded-md" />
-          <Skeleton className="h-2 w-[78%] rounded-md" />
-          <Skeleton className="h-2 w-[86%] rounded-md" />
-          <Skeleton className="h-2 w-[45%] rounded-md" />
-           <Skeleton className="h-2 w-[92%] rounded-md" />
-          <Skeleton className="h-2 w-[78%] rounded-md" />
-          <Skeleton className="h-2 w-[86%] rounded-md" />
-          <Skeleton className="h-2 w-[45%] rounded-md" />
+          <div className="max-w-[85%] sm:max-w-[80%] space-y-2.5 pt-0.5 w-full">
+          <div className="p-4 rounded-2xl rounded-tr-xs bg-slate-900/80 border border-slate-800/80 space-y-3">
+            <Skeleton className="h-2 w-[92%] rounded-md bg-slate-800" />
+            
+          </div>
         </div>
       </div>
-    </div>
 
-    <div className="w-full flex items-end  justify-end opacity-40">
-    <Skeleton className="h-8 w-[62%] rounded-2xl" />
-    </div>
-    <div className="flex items-start gap-4 justify-start opacity-20">
-      {/* Assistant avatar */}
-      <Avatar  className="h-8 w-8 shrink-0 select-none items-center justify-center rounded-lg border border-cyan-200 dark:border-cyan-900  shadow-sm text-xs">
-        GAI
-      </Avatar>
 
-      {/* Message content */}
-      <div className="max-w-[85%] space-y-2 pt-0.5 w-full">
-        <div className="space-y-3">
-          <Skeleton className="h-2 w-[92%] rounded-md" />
-          <Skeleton className="h-2 w-[78%] rounded-md" />
-          <Skeleton className="h-2 w-[86%] rounded-md" />
-          <Skeleton className="h-2 w-[45%] rounded-md" />
-           <Skeleton className="h-2 w-[92%] rounded-md" />
-          <Skeleton className="h-2 w-[78%] rounded-md" />
-          <Skeleton className="h-2 w-[86%] rounded-md" />
-          <Skeleton className="h-2 w-[45%] rounded-md" />
+      {/* First Assistant Response Skeleton */}
+      <div className="flex items-start gap-3.5 justify-start">
+     
+        <div className="max-w-[85%] sm:max-w-[80%] space-y-2.5 pt-0.5 w-full">
+          <div className="p-4 rounded-2xl rounded-tl-xs bg-slate-900/80 border border-slate-800/80 space-y-3">
+            <Skeleton className="h-2 w-[92%] rounded-md bg-slate-800" />
+            <Skeleton className="h-2 w-[78%] rounded-md bg-slate-800" />
+            <Skeleton className="h-2 w-[86%] rounded-md bg-slate-800" />
+            <Skeleton className="h-2 w-[45%] rounded-md bg-slate-800" />
+          </div>
         </div>
       </div>
-    </div>
 
+      {/* Second User Message Skeleton */}
+      <div className="w-full flex justify-end">
+
+          <div className="max-w-[65%] sm:max-w-[60%] space-y-2.5 pt-0.5 w-full">
+          <div className="p-4 rounded-2xl rounded-tr-xs bg-slate-900/80 border border-slate-800/80 space-y-3">
+            <Skeleton className="h-2 w-[92%] rounded-md bg-slate-800" />
+            
+          </div>
+        </div>
+      </div>
+
+      {/* Second Assistant Response Skeleton */}
+      <div className="flex items-start gap-3.5 justify-start opacity-60">
+       
+
+        <div className="max-w-[85%] sm:max-w-[80%] space-y-2.5 pt-0.5 w-full">
+          <div className="p-4 rounded-2xl rounded-tl-xs bg-slate-900/80 border border-slate-800/80 space-y-3">
+            <Skeleton className="h-2 w-[88%] rounded-md bg-slate-800" />
+            <Skeleton className="h-2 w-[70%] rounded-md bg-slate-800" />
+            <Skeleton className="h-2 w-[82%] rounded-md bg-slate-800" />
+             <Skeleton className="h-2 w-[70%] rounded-md bg-slate-800" />
+            <Skeleton className="h-2 w-[82%] rounded-md bg-slate-800" />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

@@ -1,5 +1,11 @@
 "use client";
-
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { useState } from "react";
 import {
   Table,
@@ -31,6 +37,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { syncConversation } from "@/app/action";
+import { Input } from "../ui/input";
 
 export type Conversation = {
   id: string;
@@ -107,12 +114,24 @@ export function ConversationsTable({
   };
 
   return (
-    <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-xs overflow-hidden">
-      <Table>
+     <div className="space-y-8 my-8 w-full">
+
+
+     <Card>
+      <CardHeader >
+       <CardTitle>User chat sessions</CardTitle>
+          <CardDescription>
+           Monitor users chat sessions from here
+          </CardDescription>
+      </CardHeader>
+
+      <CardContent className="space-y-4">
+        
+   <Table>
         <TableHeader className="bg-zinc-50/50 dark:bg-zinc-900/50">
           <TableRow>
-            <TableHead className="w-45">Conversation ID</TableHead>
-            <TableHead>Status</TableHead>
+            {/* <TableHead className="w-45">Conversation ID</TableHead> */}
+            <TableHead>Content</TableHead>
             <TableHead className="text-right">Responses</TableHead>
             <TableHead className="text-right">Tokens Used</TableHead>
             <TableHead>Created At</TableHead>
@@ -133,7 +152,7 @@ export function ConversationsTable({
                 className="hover:bg-zinc-50/80 dark:hover:bg-zinc-900/50 transition-colors"
               >
                 {/* Conversation ID with Copy feature */}
-                <TableCell className="font-mono text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                {/* <TableCell className="font-mono text-xs font-medium text-zinc-700 dark:text-zinc-300">
                   <div className="flex items-center gap-1.5">
                     <span title={conv?.id}>
                       {conv.id.slice(0, 10)}...{conv.id.slice(-6)}
@@ -151,15 +170,15 @@ export function ConversationsTable({
                       )}
                     </Button>
                   </div>
-                </TableCell>
+                </TableCell> */}
 
                 {/* Status */}
-                <TableCell>
-                  {getStatusBadge(conv?.first_item?.status)}
+                <TableCell className="flex justify-between gap-x-2">
+                 <p className="text-muted-foreground max-w-42 truncate">{conv?.first_item.content[0].text}</p> {getStatusBadge(conv?.first_item?.status)}
                 </TableCell>
 
                 {/* Responses */}
-                <TableCell className="text-right font-medium">
+                <TableCell className="text-right font-medium ">
                   <div className="inline-flex items-center gap-1 text-zinc-600 dark:text-zinc-400 text-xs">
                     <MessageSquare className="h-3.5 w-3.5 text-zinc-400" />
                     <span>{conv?.num_responses}</span>
@@ -232,6 +251,9 @@ export function ConversationsTable({
           )}
         </TableBody>
       </Table>
+    
+      </CardContent>
+    </Card>
     </div>
   );
 }

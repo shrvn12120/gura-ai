@@ -45,7 +45,6 @@ export default async function ShowConvPage({ params }: EditPageProps) {
     
 
     data = await conversation.json();
-    console.log({data})
   } catch (error) {
     return notFound();
   }

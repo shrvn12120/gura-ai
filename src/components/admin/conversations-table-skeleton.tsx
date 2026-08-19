@@ -7,6 +7,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+
 
 interface TableSkeletonProps {
   rowCount?: number;
@@ -14,11 +22,22 @@ interface TableSkeletonProps {
 
 export function ConversationsTableSkeleton({ rowCount = 5 }: TableSkeletonProps) {
   return (
-    <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-xs overflow-hidden">
-      <Table>
+ <div className="space-y-8 my-8 w-full">
+
+
+        <Card>
+      <CardHeader >
+       <CardTitle>User chat sessions</CardTitle>
+          <CardDescription>
+           Monitor users chat sessions from here
+          </CardDescription>
+      </CardHeader>
+
+      <CardContent className="space-y-4">
+        
+   <Table>
         <TableHeader className="bg-zinc-50/50 dark:bg-zinc-900/50">
           <TableRow>
-            <TableHead className="w-45">Conversation ID</TableHead>
             <TableHead>Status</TableHead>
             <TableHead className="text-right">Responses</TableHead>
             <TableHead className="text-right">Tokens Used</TableHead>
@@ -29,13 +48,7 @@ export function ConversationsTableSkeleton({ rowCount = 5 }: TableSkeletonProps)
         <TableBody>
           {Array.from({ length: rowCount }).map((_, i) => (
             <TableRow key={i}>
-              {/* Conversation ID */}
-              <TableCell>
-                <div className="flex items-center gap-1.5">
-                  <Skeleton className="h-4 w-32" />
-                  <Skeleton className="h-6 w-6 rounded-md" />
-                </div>
-              </TableCell>
+             
 
               {/* Status Badge */}
               <TableCell>
@@ -73,6 +86,12 @@ export function ConversationsTableSkeleton({ rowCount = 5 }: TableSkeletonProps)
           ))}
         </TableBody>
       </Table>
+
+    
+      </CardContent>
+    </Card>
+
     </div>
+   
   );
 }

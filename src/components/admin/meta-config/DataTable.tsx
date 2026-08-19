@@ -58,7 +58,7 @@ export default function MetaConfigTable({
   }, [data, search]);
 
   return (
-    <div className="space-y-8 my-8">
+    <div className="space-y-8 my-8 w-full">
          <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <div>

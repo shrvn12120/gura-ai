@@ -4,6 +4,7 @@ import { Conversation } from "@/components/admin/conversations-table";
 import { MetaConfig } from "@/components/admin/meta-config/types";
 import { db } from "@/lib/db";
 import { openai } from "@/lib/openai";
+import { cookies } from "next/headers";
 
 // --------------------- //
 
@@ -180,10 +181,25 @@ export async function getNoticeById(id: string) {
   return result.rows[0];
 }
 
-export async function getConversationHistory(conId: string) {
+export async function getConversationHistory(conId?: string) {
   // Add &limit=100 to fetch more than the default 20 items
+let id = conId
+let conversation_id
+
+if(!conId){
+ const cookieStore = await cookies ()
+  conversation_id = await cookieStore.get("conversation_id")?.value
+}
+ 
+ 
+
+    id = conId ? conId :  conversation_id;
+     if(!id){
+     return JSON.stringify([]);
+  }
+
   const conversation = await fetch(
-    `https://api.openai.com/v1/conversations/${conId}/items?limit=100&include[]=message.input_image.image_url&include[]=computer_call_output.output.image_url&include[]=file_search_call.results&order=desc`,
+    `https://api.openai.com/v1/conversations/${id}/items?limit=100&include[]=message.input_image.image_url&include[]=computer_call_output.output.image_url&include[]=file_search_call.results&order=desc`,
     {
       method: "GET",
       headers: {
@@ -246,7 +262,6 @@ const conversation = await fetch(`https://api.openai.com/v1/dashboard/conversati
 //   return result.rows as Conversation[];
 
 const {data} = await conversation.json()
-
 
 
 return data as Conversation[];
@@ -337,4 +352,9 @@ export async function syncConversation(conId: string) {
   }
 
   return result.rows[0];
+}
+
+export async function clearConversationId() {
+  const cookieStore = await cookies();
+  cookieStore.delete("conversation_id");
 }

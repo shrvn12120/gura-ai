@@ -104,7 +104,7 @@ export default function RootLayout({
           content="https://ai.devemm.com/og-image.webp"
         />
       </head>
-      <body className="min-h-full flex flex-col bg-zinc-50 dark:bg-zinc-950">
+      <body className="min-h-full flex flex-col bg-zinc-50  dark:bg-slate-950">
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
