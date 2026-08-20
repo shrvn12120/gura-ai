@@ -10,7 +10,7 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-const MODEL = "gpt-5.4-nano-2026-03-17";
+const MODEL = "gpt-5.6-luna";
 const MAX_TOOL_LOOPS = 3;
 
 const encoder = new TextEncoder();
