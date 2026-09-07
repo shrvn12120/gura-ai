@@ -181,3 +181,4 @@ export async function vectorSearch(
     distance: Number(row.distance),
   }));
 }
+

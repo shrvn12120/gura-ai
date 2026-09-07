@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
@@ -16,7 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch"
 import { Loader2, Plus, Save, Trash } from "lucide-react";
-import { INotice, NoticePriority, NoticeType } from "@/models/Notice";
+import { INotice, NoticePriority, NoticeType } from "@/types";
 
 
 

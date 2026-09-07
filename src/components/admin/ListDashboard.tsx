@@ -20,7 +20,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-// import { CATEGORY_SUBCATEGORY_META_CONFIGS } from "@/lib/categories.config";
 import { Label } from "../ui/label";
 import { Badge } from "../ui/badge";
 import {MetaField } from "@/lib/categories.config";

@@ -4,10 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Plus } from "lucide-react"; // Optional: Adds a nice plus icon to your button
 import { Separator } from "@/components/ui/separator";
-import  { INotice } from "@/models/Notice";
+
 import { Badge } from "@/components/ui/badge";
 import { Suspense } from "react";
 import { getAllNotices } from "@/app/action";
+import { INotice } from "@/types";
 
 
 

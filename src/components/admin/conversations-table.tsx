@@ -1,12 +1,15 @@
 "use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-  CardDescription,
 } from "@/components/ui/card";
-import { useState } from "react";
+
 import {
   Table,
   TableBody,
@@ -15,245 +18,381 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  MoreHorizontal,
-  Copy,
-  Check,
-  Eye,
-  Trash2,
   MessageSquare,
+  Wrench,
   Zap,
-  Wand,
+  Clock,
+  AlertCircle,
+  Eye,
+  RefreshCw,
 } from "lucide-react";
-import Link from "next/link";
-import { syncConversation } from "@/app/action";
-import { Input } from "../ui/input";
+import { Session } from "@/types/admin-session";
 
-export type Conversation = {
-  id: string;
-  openai_conversation_id: string;
-  object: string;
-  created_at: number; // Unix timestamp
-  first_item: {
-    id: string;
-    type: string;
-    status: "completed" | "in_progress" | "failed" | string;
-    content: Array<{
-      type: string;
-      text: string;
-    }>;
-    role: string;
-  };
-  num_responses: number;
-  num_tokens: number;
-  metadata: Record<string, unknown>;
-};
 
-interface ConversationsTableProps {
-  conversations: Conversation[];
+function formatNumber(value: number) {
+  return new Intl.NumberFormat("en-US").format(value);
 }
 
-export function ConversationsTable({
-  conversations,
-}: ConversationsTableProps) {
-  const [copiedId, setCopiedId] = useState<string | null>(null);
+function formatDate(date: string) {
+  return new Date(date).toLocaleString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
 
-  const handleCopyId = (id: string) => {
-    navigator.clipboard.writeText(id);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000);
-  };
+function formatDuration(start: string, end: string) {
+  const diff =
+    new Date(end).getTime() -
+    new Date(start).getTime();
 
-  const formatDate = (timestamp: number) => {
-    return new Date(timestamp * 1000).toLocaleString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
+  if (diff < 1000) {
+    return "<1s";
+  }
 
-  const getStatusBadge = (status?: string) => {
-    switch (status?.toLowerCase()) {
-      case "completed":
-        return (
-          <Badge
-            variant="outline"
-            className="bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800"
-          >
-            Completed
-          </Badge>
-        );
-      case undefined:
-        return (
-          <Badge
-            variant="outline"
-            className="bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400 border-amber-200 dark:border-amber-800 animate-pulse"
-          >
-            In Progress
-          </Badge>
-        );
-      default:
-        return (
-          <Badge variant="outline" className="capitalize">
-            {status}
-          </Badge>
-        );
+  const seconds = Math.floor(diff / 1000);
+
+  if (seconds < 60) {
+    return `${seconds}s`;
+  }
+
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+
+  return `${minutes}m ${remainingSeconds}s`;
+}
+
+function truncate(text: string | null, length = 80) {
+  if (!text) {
+    return "No user message";
+  }
+
+  if (text.length <= length) {
+    return text;
+  }
+
+  return `${text.slice(0, length)}...`;
+}
+
+export default function SessionsTable() {
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  async function loadSessions() {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await fetch("/api/sessions", {
+        cache: "no-store",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch sessions");
+      }
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.error || "Failed to fetch sessions");
+      }
+
+      setSessions(data.sessions || []);
+    } catch (error) {
+      console.error(error);
+
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Failed to load sessions"
+      );
+    } finally {
+      setLoading(false);
     }
-  };
+  }
+
+  useEffect(() => {
+    loadSessions();
+  }, []);
+
+  const totalTokens = sessions.reduce(
+    (sum, session) => sum + Number(session.total_tokens || 0),
+    0
+  );
+
+  const totalRequests = sessions.reduce(
+    (sum, session) => sum + Number(session.request_count || 0),
+    0
+  );
+
+  const totalToolCalls = sessions.reduce(
+    (sum, session) => sum + Number(session.tool_calls || 0),
+    0
+  );
+
+  const totalErrors = sessions.reduce(
+    (sum, session) => sum + Number(session.error_count || 0),
+    0
+  );
 
   return (
-     <div className="space-y-8 my-8 w-full">
+    <div className="space-y-6">
 
+      {/* Summary */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
 
-     <Card>
-      <CardHeader >
-       <CardTitle>User chat sessions</CardTitle>
-          <CardDescription>
-           Monitor users chat sessions from here
-          </CardDescription>
-      </CardHeader>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">
+                  Sessions
+                </p>
 
-      <CardContent className="space-y-4">
-        
-   <Table>
-        <TableHeader className="bg-zinc-50/50 dark:bg-zinc-900/50">
-          <TableRow>
-            {/* <TableHead className="w-45">Conversation ID</TableHead> */}
-            <TableHead>Content</TableHead>
-            <TableHead className="text-right">Responses</TableHead>
-            <TableHead className="text-right">Tokens Used</TableHead>
-            <TableHead>Created At</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {conversations.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={6} className="h-24 text-center text-zinc-500">
-                No conversations found.
-              </TableCell>
-            </TableRow>
-          ) : (
-            conversations.map((conv) => (
-              <TableRow
-                key={conv?.id}
-                className="hover:bg-zinc-50/80 dark:hover:bg-zinc-900/50 transition-colors"
-              >
-                {/* Conversation ID with Copy feature */}
-                {/* <TableCell className="font-mono text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                  <div className="flex items-center gap-1.5">
-                    <span title={conv?.id}>
-                      {conv.id.slice(0, 10)}...{conv.id.slice(-6)}
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
-                      onClick={() => handleCopyId(conv.id)}
-                    >
-                      {copiedId === conv.id ? (
-                        <Check className="h-3 w-3 text-emerald-500" />
-                      ) : (
-                        <Copy className="h-3 w-3" />
-                      )}
-                    </Button>
-                  </div>
-                </TableCell> */}
+                <p className="mt-1 text-2xl font-semibold">
+                  {formatNumber(sessions.length)}
+                </p>
+              </div>
 
-                {/* Status */}
-                <TableCell className="flex justify-between gap-x-2">
-                 <p className="text-muted-foreground max-w-42 truncate">{conv?.first_item.content[0].text}</p> {getStatusBadge(conv?.first_item?.status)}
-                </TableCell>
+              <MessageSquare className="h-5 w-5 text-muted-foreground" />
+            </div>
+          </CardContent>
+        </Card>
 
-                {/* Responses */}
-                <TableCell className="text-right font-medium ">
-                  <div className="inline-flex items-center gap-1 text-zinc-600 dark:text-zinc-400 text-xs">
-                    <MessageSquare className="h-3.5 w-3.5 text-zinc-400" />
-                    <span>{conv?.num_responses}</span>
-                  </div>
-                </TableCell>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">
+                  AI Requests
+                </p>
 
-                {/* Tokens Used */}
-                <TableCell className="text-right font-medium">
-                  <div className="inline-flex items-center gap-1 text-zinc-600 dark:text-zinc-400 text-xs">
-                    <Zap className="h-3.5 w-3.5 text-amber-500" />
-                    <span>{conv?.num_tokens?.toLocaleString()}</span>
-                  </div>
-                </TableCell>
+                <p className="mt-1 text-2xl font-semibold">
+                  {formatNumber(totalRequests)}
+                </p>
+              </div>
 
-                {/* Created At */}
-                <TableCell className="text-xs text-zinc-500 dark:text-zinc-400">
-                  {formatDate(conv?.created_at)}
-                </TableCell>
+              <Zap className="h-5 w-5 text-muted-foreground" />
+            </div>
+          </CardContent>
+        </Card>
 
-                {/* Action Dropdown */}
-                <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        className="h-8 w-8 p-0 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-50"
-                      >
-                        <span className="sr-only">Open menu</span>
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-40">
-                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuItem onClick={() => handleCopyId(conv.id)}>
-                        <Copy className="mr-2 h-3.5 w-3.5 text-zinc-500" />
-                        Copy ID
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem>
-                        <Link className="flex space-x-2 items-center" href={`/admin/conversations/${conv.id}`}>
-                         <Eye className="mr-2 h-3.5 w-3.5 text-zinc-500" />
-                        View details
-                        </Link>
-                       
-                      </DropdownMenuItem>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">
+                  Tokens
+                </p>
 
-                      <DropdownMenuItem onClick={(()=>{
-                        syncConversation(conv.id
-)
-                      })}>
+                <p className="mt-1 text-2xl font-semibold">
+                  {formatNumber(totalTokens)}
+                </p>
+              </div>
 
-                         <Wand className="mr-2 h-3.5 w-3.5 text-zinc-500" />
-                          Sync Data
-                        
-                       
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                      disabled
-                        
-                        className="text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400"
-                      >
-                        <Trash2 className="mr-2 h-3.5 w-3.5" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              </TableRow>
-            ))
+              <Zap className="h-5 w-5 text-muted-foreground" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">
+                  Errors
+                </p>
+
+                <p className="mt-1 text-2xl font-semibold">
+                  {formatNumber(totalErrors)}
+                </p>
+              </div>
+
+              <AlertCircle className="h-5 w-5 text-muted-foreground" />
+            </div>
+          </CardContent>
+        </Card>
+
+      </div>
+
+      {/* Table */}
+      <Card>
+
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Conversation Sessions</CardTitle>
+
+            <p className="mt-1 text-sm text-muted-foreground">
+              Each row represents one user session.
+            </p>
+          </div>
+
+          <button
+            onClick={loadSessions}
+            disabled={loading}
+            className="inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm hover:bg-muted disabled:opacity-50"
+          >
+            <RefreshCw
+              className={`h-4 w-4 ${
+                loading ? "animate-spin" : ""
+              }`}
+            />
+
+            Refresh
+          </button>
+        </CardHeader>
+
+        <CardContent>
+
+          {error && (
+            <div className="mb-4 rounded-md border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
+              {error}
+            </div>
           )}
-        </TableBody>
-      </Table>
-    
-      </CardContent>
-    </Card>
+
+          <div className="rounded-md border">
+
+            <Table>
+
+              <TableHeader className="bg-zinc-50/50 dark:bg-zinc-900/50">
+
+                <TableRow>
+                  <TableHead>Conversation</TableHead>
+                  <TableHead>Session ID</TableHead>
+                  <TableHead className="text-right">
+                    Requests
+                  </TableHead>
+                  <TableHead className="text-right">
+                    Tokens
+                  </TableHead>
+                  <TableHead className="text-right">
+                    Tools
+                  </TableHead>
+                  <TableHead>Duration</TableHead>
+                  <TableHead>Last Activity</TableHead>
+                  <TableHead className="text-right">
+                    Actions
+                  </TableHead>
+                </TableRow>
+
+              </TableHeader>
+
+              <TableBody>
+
+                {loading ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={8}
+                      className="h-32 text-center"
+                    >
+                      Loading sessions...
+                    </TableCell>
+                  </TableRow>
+                ) : sessions.length === 0 ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={8}
+                      className="h-32 text-center text-muted-foreground"
+                    >
+                      No conversation sessions found.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  sessions.map((session) => (
+
+                    <TableRow key={session.session_id}>
+
+                      <TableCell className="max-w-[320px]">
+                        <div className="space-y-1">
+
+                          <p className="truncate font-medium">
+                            {truncate(
+                              session.first_user_message,
+                              70
+                            )}
+                          </p>
+
+                          <p className="text-xs text-muted-foreground">
+                            Started{" "}
+                            {formatDate(session.started_at)}
+                          </p>
+
+                        </div>
+                      </TableCell>
+
+                      <TableCell>
+                        <code className="rounded bg-muted px-2 py-1 text-xs">
+                          {session.session_id.slice(0, 12)}...
+                        </code>
+                      </TableCell>
+
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <MessageSquare className="h-3.5 w-3.5 text-muted-foreground" />
+                          {session.request_count}
+                        </div>
+                      </TableCell>
+
+                      <TableCell className="text-right font-mono text-sm">
+                        {formatNumber(
+                          Number(session.total_tokens)
+                        )}
+                      </TableCell>
+
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <Wrench className="h-3.5 w-3.5 text-muted-foreground" />
+                          {session.tool_calls}
+                        </div>
+                      </TableCell>
+
+                      <TableCell>
+                        <div className="flex items-center gap-1.5 text-sm">
+                          <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+
+                          {formatDuration(
+                            session.started_at,
+                            session.last_activity
+                          )}
+                        </div>
+                      </TableCell>
+
+                      <TableCell className="whitespace-nowrap text-sm">
+                        {formatDate(session.last_activity)}
+                      </TableCell>
+
+                      <TableCell className="text-right">
+
+                        <Link
+                          href={`/admin/conversations/${session.session_id}`}
+                          className="inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm hover:bg-muted"
+                        >
+                          <Eye className="h-4 w-4" />
+                          Inspect
+                        </Link>
+
+                      </TableCell>
+
+                    </TableRow>
+
+                  ))
+                )}
+
+              </TableBody>
+
+            </Table>
+
+          </div>
+
+        </CardContent>
+
+      </Card>
+
     </div>
   );
 }

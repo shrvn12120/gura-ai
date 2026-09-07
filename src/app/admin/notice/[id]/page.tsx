@@ -1,7 +1,8 @@
 
 import { getNoticeById } from "@/app/action";
 import NoticeForm from "@/components/admin/NoticeForm";
-import { INotice } from "@/models/Notice";
+import { INotice } from "@/types";
+
 
 import { notFound } from "next/navigation";
 

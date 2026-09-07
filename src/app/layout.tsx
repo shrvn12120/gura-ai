@@ -4,6 +4,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "sonner";
+import Script from "next/script";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -103,6 +104,7 @@ export default function RootLayout({
           name="twitter:image"
           content="https://ai.devemm.com/og-image.webp"
         />
+
       </head>
       <body className="min-h-full flex flex-col bg-zinc-50  dark:bg-slate-950">
         <ThemeProvider
@@ -113,8 +115,10 @@ export default function RootLayout({
         >
           {children}
           <Toaster />
+          
         </ThemeProvider>
       </body>
+      
     </html>
   );
 }

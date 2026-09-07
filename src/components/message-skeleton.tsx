@@ -1,6 +1,4 @@
 "use client";
-
-import { Avatar } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export function MessageSkeleton() {

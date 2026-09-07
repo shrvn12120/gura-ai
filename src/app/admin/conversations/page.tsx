@@ -1,17 +1,15 @@
-import { getAllConversationHistory } from '@/app/action'
-import { ConversationsTable } from '@/components/admin/conversations-table'
+
+import SessionsTable from '@/components/admin/conversations-table'
 import { ConversationsTableSkeleton } from '@/components/admin/conversations-table-skeleton'
-import { notFound } from 'next/navigation'
-import React, { Suspense } from 'react'
+
+import  { Suspense } from 'react'
 
 type Props = {}
 
 const Information = async()=>{
-const conversations = await getAllConversationHistory()
-if(!conversations) notFound()
 return(
     <div className='w-full'>
-    <ConversationsTable conversations={conversations} />
+    <SessionsTable  />
     </div>
 )
 }
