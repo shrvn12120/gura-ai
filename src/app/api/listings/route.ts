@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { openai } from "@/lib/openai";
-
+import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 
@@ -19,6 +19,16 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
 
     const searchableText = buildText(body);
+
+    let publicPasswordHash: string | null = null;
+
+
+    if (body.public_access && body.publicPassword) {
+        publicPasswordHash = await bcrypt.hash(body.publicPassword, 12);
+    }
+    if (!body.public_access) {
+    publicPasswordHash = null;
+}
 
     const embeddingResponse = await openai.embeddings.create({
       model: "text-embedding-3-small",
@@ -41,7 +51,9 @@ export async function POST(req: NextRequest) {
         metadata,
         active,
         searchable_text,
-        embedding
+        embedding,
+        public_access,
+        public_password_hash
       )
 
       VALUES
@@ -79,6 +91,8 @@ export async function POST(req: NextRequest) {
         searchableText,
 
         `[${embedding.join(",")}]`,
+        body.public_access ?? false,
+        publicPasswordHash?? null,
       ]
     );
 

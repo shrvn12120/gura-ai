@@ -47,6 +47,29 @@ import {
   saveInteractionId,
   type StoredMessage,
 } from "@/lib/chatStorage";
+const asciiArt = `
+  /\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\
+ /                                        \\
+<  (>:)              ||              (<:)  |
+>   \\ \\             /||\\             / /   >
+<    \\ \\           / || \\           / /    <
+>     \\ \\____     /  ||  \\     ____/ /     >
+<      \\____/\\   ====++====   /\\____/      <
+>           \\ \\==    ||    ==/ /           >
+<            \\====   ||   ====/            <
+>                 \\  ||  /                 >
+<  ==================++==================  <
+>                 /  ||  \\                 >
+<            /====   ||   ====\\            <
+>           / /==    ||    ==/ \\           >
+<      /____\\/   ====++====   \\/____\\      <
+>     / /----     \\  ||  /     ----\\ \\     >
+<    / /           \\ || /           \\ \\    <
+>   / /             \\||/             \\ \\   >
+<  (<:)              ||              (>:)  |
+ \\                                        /
+  \\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/
+`;
 
 /* =========================================================
    TYPES
@@ -209,7 +232,11 @@ export default function ChatUi({
 
   useEffect(() => {
     let cancelled = false;
-
+console.log(`%c${asciiArt}`, 'font-family: monospace; color: #007799; font-weight: bold;');
+console.log(
+  '%c   EXPLORE GURAIDHOO AI GUIDE   ',
+  'background: #007799; color: #ffffff; font-size: 14px; font-weight: bold; padding: 4px 8px; border-radius: 4px;'
+);
     async function initializeChat() {
       try {
         setHistoryLoading(true);

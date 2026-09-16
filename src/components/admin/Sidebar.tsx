@@ -3,10 +3,35 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, Building2, BookOpen, MessageCircleMoreIcon } from "lucide-react";
+import { LayoutDashboard, Building2, BookOpen, MessageCircleMoreIcon, QrCode } from "lucide-react";
 import { ThemeChanger } from "../theme-toggle";
+import { useEffect, useState } from "react";
 
 export default function SidebarMenu() {
+  const [loading, setLoading] = useState(true);
+  const [revisions, setRevisions] = useState<number>(0);
+
+   async function fetchRevisions() {
+     setLoading(true);
+    try {
+      const res = await fetch("/api/revisions");
+      const data = await res.json();
+      if (res.ok) {
+           
+        setRevisions(data.revisions.length);
+      }
+    } catch (err) {
+      console.error("Failed to fetch pending revisions:", err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(()=>{
+    fetchRevisions();
+  }, [])
+
+
   const pathname = usePathname();
 
   const routes = [
@@ -22,29 +47,35 @@ export default function SidebarMenu() {
       href: "/admin/listings",
       icon: Building2,
       // Active if it is on the listings page or any deeper sub-route (e.g., /new)
-      active: pathname.startsWith("/admin/listings"),
+      active: pathname === "/admin/listings",
+    },
+     {
+      label: `Listings Approvals`,
+      href: "/admin/listings/approvals",
+      icon: QrCode,
+      // Active if it is on the listings page or any deeper sub-route (e.g., /new)
+      active: pathname ==="/admin/listings/approvals",
     },
     {
       label: "Notices",
       href: "/admin/notice",
       icon: BookOpen,
-      active: pathname.startsWith("/admin/notice"),
+      active: pathname==="/admin/notice",
     },
      {
       label: "Meta configs",
       href: "/admin/config/meta-configs",
       icon: BookOpen,
-      active: pathname.startsWith("/admin/config/meta-configs"),
+      active: pathname === "/admin/config/meta-configs",
     },
     {
       label: "Conversations",
       href: "/admin/conversations",
       icon: MessageCircleMoreIcon,
-      active: pathname.startsWith("/admin/conversations"),
+      active: pathname === "/admin/conversations",
     },
     // conversations
   ];
-
   return (
     <aside className="w-64 h-screen border-r bg-card text-card-foreground p-4 flex flex-col justify-between">
       <div className="space-y-6">
@@ -82,7 +113,12 @@ export default function SidebarMenu() {
                       : "text-muted-foreground group-hover:text-foreground"
                   )}
                 />
-                {route.label}
+                {route.label} {route.label.includes("Listings Approvals") && (
+                   <span className="ml-1 inline-flex items-center justify-center rounded-full bg-destructive px-2 py-0.5 text-xs text-destructive-foreground text-white font-light">
+                  {loading? <><span className="animate-bounce">.</span> <span className="animate-bounce delay-75">.</span> </> : revisions}  
+                  </span>
+                
+                )}
               </Link>
             );
           })}

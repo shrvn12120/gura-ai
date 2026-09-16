@@ -23,6 +23,7 @@ import { Loader2, Plus, Save, Trash } from "lucide-react";
 import { Separator } from "../ui/separator";
 import { getDefaultMeta, MetaField, Social } from "@/lib/categories.config";
 import { ApiAttachmentUploader } from "./ImageKitAttachmentUploader";
+import { PasswordInput } from "../password";
 
 
 //  CATEGORY_SUBCATEGORY_META_CONFIGS,
@@ -49,18 +50,27 @@ export type ListingFormData = {
     },
     images: { id: string; url: string, alt: string }[];
     metadata: Record<string, MetaField>;
-    active: boolean
+    active: boolean;
+
+    public_access?: boolean;
+
+    // Only exists in browser/admin form.
+    // Never store this directly.
+    publicPassword?: string;
+
 };
 
 interface ListingFormProps {
     initialData?: ListingFormData;
-    categories:  Record<string, Record<string, MetaField[]>>
+    categories:  Record<string, Record<string, MetaField[]>>;
+    mode?: "admin" | "public";
 }
 
 
-export default function ListingForm({ initialData, categories }: ListingFormProps) {
+export default function ListingForm({ initialData, categories, mode }: ListingFormProps) {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
+    const isPublicMode = mode === "public";
 
     const isEditMode = !!initialData?._id;
 
@@ -96,7 +106,6 @@ export default function ListingForm({ initialData, categories }: ListingFormProp
             active: false
         };
     });
-
 
     function update(key: any, value: any) {
         setForm((prev) => {
@@ -385,6 +394,61 @@ const otherFields = dynamicFields.filter((f) => !isBooleanField(f));
                             </div>
                         </CardContent>
                     </Card>
+                    <Separator />
+                    <Card className="bg-muted/40">
+    <CardHeader>
+        <CardTitle>Public Editing Access</CardTitle>
+        <CardDescription>
+            Allow a business owner or responsible person to update
+            selected listing information without giving them admin access.
+        </CardDescription>
+    </CardHeader>
+
+    <CardContent className="space-y-4">
+        <div className="flex items-center justify-between rounded-lg border p-4">
+            <div>
+                <Label>Allow public editing</Label>
+
+                <p className="text-sm text-muted-foreground">
+                    Allows someone with the shared password to submit
+                    changes for admin approval.
+                </p>
+            </div>
+
+            <Checkbox
+                checked={form.public_access}
+                onCheckedChange={(checked) =>
+                    update("public_access", !!checked)
+                }
+            />
+        </div>
+
+        {form.public_access && (
+            <div className="space-y-2">
+                <Label htmlFor="public-password">
+                    Public editing password
+                </Label>
+
+                <Input
+                    id="public-password"
+                    type="text"
+                    value={form.publicPassword ?? ""}
+                    onChange={(e) =>
+                        update("publicPassword", e.target.value)
+                    }
+                    placeholder="Enter password to share"
+                />
+
+                <p className="text-sm text-muted-foreground">
+                    Share this password with the person responsible for
+                    this listing. The password itself is never stored in
+                    the database.
+                </p>
+                {/* <PasswordInput form={form} update={update} /> */}
+            </div>
+        )}
+    </CardContent>
+</Card>
                     <Separator />
 
                     <Card className="bg-muted/40">

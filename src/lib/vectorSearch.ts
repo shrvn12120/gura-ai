@@ -1,3 +1,187 @@
+// import OpenAI from "openai";
+// import { db } from "./db";
+
+// const openai = new OpenAI({
+//   apiKey: process.env.OPENAI_API_KEY!,
+// });
+
+// const EMBEDDING_MODEL = "text-embedding-3-small";
+
+// function normalizeQuery(query: string) {
+//   return query
+//     .trim()
+//     .toLowerCase()
+//     .replace(/[?!.。,]+$/g, "")
+//     .replace(/\s+/g, " ");
+// }
+
+// export type VectorSearchResult = {
+//   id: string;
+//   title: string;
+//   category: string | null;
+//   subCategory: string | null;
+//   description: string | null;
+//   contactInfo: unknown;
+//   metadata: unknown;
+//   images: unknown;
+//   distance: number;
+// };
+
+// export async function vectorSearch(
+//   query: string,
+//   limit = 4,
+// ): Promise<VectorSearchResult[]> {
+//   const normalizedQuery =
+//     normalizeQuery(query);
+
+//   if (!normalizedQuery) {
+//     return [];
+//   }
+
+//   let queryVector: string;
+
+//   /*
+//    * --------------------------------------------------
+//    * 1. EMBEDDING CACHE
+//    * --------------------------------------------------
+//    */
+
+//   const cached = await db.query(
+//     `
+//     SELECT embedding
+//     FROM query_embeddings
+//     WHERE query = $1
+//     LIMIT 1
+//     `,
+//     [normalizedQuery],
+//   );
+//   /*
+//    * --------------------------------------------------
+//    * 2. CACHE HIT
+//    * --------------------------------------------------
+//    */
+
+//   if (cached.rows.length > 0) {
+//     queryVector =
+//       cached.rows[0].embedding;
+
+//     /*
+//      * Analytics only.
+//      *
+//      * Don't make the user wait for this.
+//      */
+//     void db.query(
+//       `
+//       UPDATE query_embeddings
+//       SET
+//         hits = hits + 1,
+//         last_used_at = NOW()
+//       WHERE query = $1
+//       `,
+//       [normalizedQuery],
+//     );
+//   }
+
+//   /*
+//    * --------------------------------------------------
+//    * 3. CACHE MISS
+//    * --------------------------------------------------
+//    */
+
+//   else {
+//     const embeddingResponse =
+//       await openai.embeddings.create({
+//         model: EMBEDDING_MODEL,
+//         input: normalizedQuery,
+//       });
+
+//     queryVector =
+//       `[${embeddingResponse.data[0].embedding.join(",")}]`;
+
+//     await db.query(
+//       `
+//       INSERT INTO query_embeddings (
+//         query,
+//         embedding,
+//         hits,
+//         last_used_at
+//       )
+//       VALUES (
+//         $1,
+//         $2::vector,
+//         0,
+//         NOW()
+//       )
+//       ON CONFLICT (query)
+//       DO UPDATE SET
+//         embedding = EXCLUDED.embedding,
+//         last_used_at = NOW()
+//       `,
+//       [
+//         normalizedQuery,
+//         queryVector,
+//       ],
+//     );
+//   }
+
+//   /*
+//    * --------------------------------------------------
+//    * 4. PGVECTOR SEARCH
+//    * --------------------------------------------------
+//    */
+
+//   const results = await db.query(
+//     `
+//     SELECT
+//       id,
+//       title,
+//       category,
+//       subcategory AS "subCategory",
+//       description,
+//       contact_info AS "contactInfo",
+//       metadata,
+//       images,
+
+//       embedding <=> $1::vector AS distance
+
+//     FROM listings
+
+//     WHERE active = true
+//       AND embedding IS NOT NULL
+
+//     ORDER BY embedding <=> $1::vector
+
+//     LIMIT $2
+//     `,
+//     [
+//       queryVector,
+//       limit,
+//     ],
+//   );
+
+//   /*
+//    * --------------------------------------------------
+//    * 5. RETURN STRUCTURED DATA
+//    * --------------------------------------------------
+//    *
+//    * Don't use formatListings() here.
+//    *
+//    * The AI tool needs structured data.
+//    */
+
+//   return results.rows.map((row) => ({
+//     id: row.id,
+//     title: row.title,
+//     category: row.category,
+//     subCategory: row.category,
+//     description: row.description,
+//     contactInfo: row.contactInfo,
+//     metadata: row.metadata,
+//     images: row.images,
+//     distance: Number(row.distance),
+//   }));
+// }
+
 import OpenAI from "openai";
 import { db } from "./db";
 
@@ -6,6 +190,9 @@ const openai = new OpenAI({
 });
 
 const EMBEDDING_MODEL = "text-embedding-3-small";
+
+const DEFAULT_LIMIT = 4;
+const MAX_LIMIT = 5;
 
 function normalizeQuery(query: string) {
   return query
@@ -27,26 +214,103 @@ export type VectorSearchResult = {
   distance: number;
 };
 
+function parseEmbedding(value: unknown): string {
+  if (typeof value === "string") {
+    return value;
+  }
+
+  if (Array.isArray(value)) {
+    return `[${value.join(",")}]`;
+  }
+
+  throw new Error("Invalid embedding returned from database.");
+}
+
+function mapSearchResults(rows: any[]): VectorSearchResult[] {
+  return rows.map((row) => ({
+    id: row.id,
+    title: row.title,
+    category: row.category,
+    subCategory: row.subCategory,
+    description: row.description,
+    contactInfo: row.contactInfo,
+    metadata: row.metadata,
+    images: row.images,
+    distance: Number(row.distance),
+  }));
+}
+
 export async function vectorSearch(
   query: string,
-  limit = 4,
+  limit = DEFAULT_LIMIT,
 ): Promise<VectorSearchResult[]> {
-  const normalizedQuery =
-    normalizeQuery(query);
+  const normalizedQuery = normalizeQuery(query);
 
   if (!normalizedQuery) {
     return [];
   }
 
-  let queryVector: string;
+  const safeLimit = Math.min(Math.max(Math.floor(limit), 1), MAX_LIMIT);
 
   /*
-   * --------------------------------------------------
-   * 1. EMBEDDING CACHE
-   * --------------------------------------------------
+   * ==================================================
+   * 1. SEARCH RESULT CACHE
+   * ==================================================
+   *
+   * Exact repeated queries don't need:
+   *
+   * embedding
+   * pgvector
+   *
+   * at all.
    */
 
-  const cached = await db.query(
+  const cachedResults = await db.query(
+    `
+    SELECT
+      results
+    FROM query_search_cache
+    WHERE query = $1
+    LIMIT 1
+    `,
+    [normalizedQuery],
+  );
+
+  if (cachedResults.rows.length > 0) {
+    /*
+     * Don't block the request for analytics.
+     */
+    void db.query(
+      `
+      UPDATE query_search_cache
+      SET
+        hits = hits + 1,
+        last_used_at = NOW()
+      WHERE query = $1
+      `,
+      [normalizedQuery],
+    );
+
+    const results = cachedResults.rows[0].results;
+
+    /*
+     * Cache was created with a specific limit.
+     *
+     * If the caller asks for fewer results,
+     * return only what was requested.
+     */
+    return Array.isArray(results) ? results.slice(0, safeLimit) : [];
+  }
+
+  /*
+   * ==================================================
+   * 2. EMBEDDING CACHE
+   * ==================================================
+   */
+
+  let queryVector: string;
+
+  const cachedEmbedding = await db.query(
     `
     SELECT embedding
     FROM query_embeddings
@@ -55,20 +319,20 @@ export async function vectorSearch(
     `,
     [normalizedQuery],
   );
+
   /*
-   * --------------------------------------------------
-   * 2. CACHE HIT
-   * --------------------------------------------------
+   * ==================================================
+   * 3. EMBEDDING CACHE HIT
+   * ==================================================
    */
 
-  if (cached.rows.length > 0) {
-    queryVector =
-      cached.rows[0].embedding;
+  if (cachedEmbedding.rows.length > 0) {
+    queryVector = parseEmbedding(cachedEmbedding.rows[0].embedding);
 
     /*
      * Analytics only.
      *
-     * Don't make the user wait for this.
+     * Never block the user.
      */
     void db.query(
       `
@@ -80,23 +344,25 @@ export async function vectorSearch(
       `,
       [normalizedQuery],
     );
-  }
+  } else {
 
   /*
-   * --------------------------------------------------
-   * 3. CACHE MISS
-   * --------------------------------------------------
+   * ==================================================
+   * 4. EMBEDDING CACHE MISS
+   * ==================================================
    */
+    const embeddingResponse = await openai.embeddings.create({
+      model: EMBEDDING_MODEL,
+      input: normalizedQuery,
+    });
 
-  else {
-    const embeddingResponse =
-      await openai.embeddings.create({
-        model: EMBEDDING_MODEL,
-        input: normalizedQuery,
-      });
+    const embedding = embeddingResponse.data[0]?.embedding;
 
-    queryVector =
-      `[${embeddingResponse.data[0].embedding.join(",")}]`;
+    if (!embedding) {
+      throw new Error("OpenAI returned an empty embedding.");
+    }
+
+    queryVector = `[${embedding.join(",")}]`;
 
     await db.query(
       `
@@ -117,17 +383,14 @@ export async function vectorSearch(
         embedding = EXCLUDED.embedding,
         last_used_at = NOW()
       `,
-      [
-        normalizedQuery,
-        queryVector,
-      ],
+      [normalizedQuery, queryVector],
     );
   }
 
   /*
-   * --------------------------------------------------
-   * 4. PGVECTOR SEARCH
-   * --------------------------------------------------
+   * ==================================================
+   * 5. PGVECTOR SEARCH
+   * ==================================================
    */
 
   const results = await db.query(
@@ -153,32 +416,46 @@ export async function vectorSearch(
 
     LIMIT $2
     `,
-    [
-      queryVector,
-      limit,
-    ],
+    [queryVector, safeLimit],
   );
 
+  const structuredResults = mapSearchResults(results.rows);
+
   /*
-   * --------------------------------------------------
-   * 5. RETURN STRUCTURED DATA
-   * --------------------------------------------------
+   * ==================================================
+   * 6. SEARCH RESULT CACHE
+   * ==================================================
    *
-   * Don't use formatListings() here.
-   *
-   * The AI tool needs structured data.
+   * Don't make caching failure break the AI request.
    */
 
-  return results.rows.map((row) => ({
-    id: row.id,
-    title: row.title,
-    category: row.category,
-    subCategory: row.category,
-    description: row.description,
-    contactInfo: row.contactInfo,
-    metadata: row.metadata,
-    images: row.images,
-    distance: Number(row.distance),
-  }));
-}
+  try {
+    await db.query(
+      `
+      INSERT INTO query_search_cache (
+        query,
+        results,
+        hits,
+        created_at,
+        last_used_at
+      )
+      VALUES (
+        $1,
+        $2::jsonb,
+        0,
+        NOW(),
+        NOW()
+      )
+      ON CONFLICT (query)
+      DO UPDATE SET
+        results = EXCLUDED.results,
+        last_used_at = NOW()
+      `,
+      [normalizedQuery, JSON.stringify(structuredResults)],
+    );
+  } catch (error) {
+    console.error("⚠️ Failed to cache vector search results:", error);
+  }
 
+  return structuredResults;
+}

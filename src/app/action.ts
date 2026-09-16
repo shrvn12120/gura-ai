@@ -3,6 +3,7 @@
 
 import { MetaConfig } from "@/components/admin/meta-config/types";
 import { db } from "@/lib/db";
+import { cacheLife, cacheTag } from "next/cache";
 
 
 // --------------------- //
@@ -98,6 +99,10 @@ export async function getMetaConfigById(id: string) {
   return result.rows[0];
 }
 export async function getListingsById(id: string) {
+    "use cache";
+
+  cacheLife("hours");
+  cacheTag(`listing:${id}`);
   const result = await db.query(
     `
     SELECT *

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { openai } from "@/lib/openai";
 import { db } from "@/lib/db";
+import bcrypt from "bcryptjs";
 
 
 function buildText(data: any) {
@@ -33,6 +34,16 @@ export async function PUT(
 
     const searchableText = buildText(body);
 
+        let publicPasswordHash: string | null = null;
+    
+    
+        if (body.public_access && body.publicPassword) {
+            publicPasswordHash = await bcrypt.hash(body.publicPassword, 12);
+        }
+        if (!body.public_access) {
+        publicPasswordHash = null;
+    }
+
     const embeddingResponse = await openai.embeddings.create({
       model: "text-embedding-3-small",
       input: searchableText,
@@ -54,9 +65,11 @@ export async function PUT(
         active = $8,
         searchable_text = $9,
         embedding = $10::vector,
+        public_access = $11,
+        public_password_hash = $12,
         updated_at = NOW()
 
-      WHERE id = $11
+      WHERE id = $13
 
       RETURNING *;
       `,
@@ -78,6 +91,8 @@ export async function PUT(
 
         `[${embedding.join(",")}]`,
 
+        body.public_access ?? false,
+        publicPasswordHash ?? null,
         id,
       ]
     );

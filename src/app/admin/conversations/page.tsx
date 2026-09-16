@@ -14,7 +14,7 @@ return(
 )
 }
 
-const page = async (props: Props) => {
+const page =  () => {
   return (
     <Suspense fallback={
         <div className='w-full'>

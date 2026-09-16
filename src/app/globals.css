@@ -168,3 +168,23 @@
     transform: translateX(-60%);
   }
 }
+
+/* RTL Message Container styling */
+.message-rtl {
+  direction: rtl;
+  text-align: right;
+  font-family: 'Faruma', 'MV Boli', 'Noto Sans Thaana', sans-serif; /* Recommended Dhivehi fonts */
+}
+
+.message-ltr {
+  direction: ltr;
+  text-align: left;
+}
+
+/* Ensure code blocks stay LTR even inside an RTL message */
+.message-rtl pre,
+.message-rtl code {
+  direction: ltr;
+  text-align: left;
+  unicode-bidi: embed;
+}

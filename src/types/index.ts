@@ -1,3 +1,5 @@
+import { MetaField } from "@/components/admin/meta-config/types";
+
 export type NoticeType =
   | "event"
   | "announcement"
@@ -20,4 +22,34 @@ export interface INotice {
   is_active: boolean;
   createdAt?: Date;
   updatedAt?: Date;
+}
+
+
+export interface PublicListingRevision {
+  description: string;
+
+  contact_info: {
+    address?: string;
+    phone?: string;
+    email?: string;
+    whatsapp?: string;
+    socials?: {
+      name: string;
+      link: string;
+    }[];
+    coordinates?: {
+      lat: string;
+      lng: string;
+    };
+  };
+
+  images: {
+    id: string;
+    url: string;
+    alt: string;
+  }[];
+
+  metadata: Record<string, MetaField>;
+
+  active: boolean;
 }
