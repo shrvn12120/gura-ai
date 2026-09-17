@@ -432,7 +432,7 @@ console.log(
       ================================================ */
 
       const res = await fetch(
-        "/api/chat",
+        "/api/chat/v2",
         {
           method: "POST",
 
@@ -1003,7 +1003,7 @@ console.log(
 
                 <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
 
-                Pre-release v1.0.0-beta.3
+                Pre-release v1.0.0-beta.4
 
               </p>
             )}

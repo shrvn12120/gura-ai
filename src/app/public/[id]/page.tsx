@@ -15,7 +15,7 @@ async function getListingWithDraft(id: string) {
     const cookieStore = await cookies();
     const cookieHeader = cookieStore.toString();
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const baseUrl = process.env.NODE_ENV === "development" ? "http://localhost:3000" : "https://ai.devemm.com";
 
     const res = await fetch(`${baseUrl}/api/public/listings/${id}`, {
       method: "GET",
