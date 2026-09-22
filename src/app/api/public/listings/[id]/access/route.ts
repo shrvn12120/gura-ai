@@ -3,7 +3,12 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { db } from "@/lib/db";
 
+const ACCESS_COOKIE_PREFIX = "listing_public_";
 const JWT_SECRET = process.env.JWT_SECRET!;
+
+function cookieName(id: string) {
+    return `${ACCESS_COOKIE_PREFIX}${id}`;
+}
 
 export async function POST(
     req: NextRequest,
@@ -58,8 +63,9 @@ export async function POST(
 
         if (!valid) {
             return NextResponse.json(
-                { error: "Invalid password" },
-                { status: 401 }
+                { error: "Invalid password"},
+                { status: 401 },
+                
             );
         }
 
@@ -96,6 +102,35 @@ export async function POST(
 
         return NextResponse.json(
             { error: "Unable to authenticate" },
+            { status: 500 }
+        );
+    }
+}
+
+export async function DELETE(
+    _req: NextRequest,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        const { id } = await params;
+        const response = NextResponse.json({ success: true });
+
+        response.cookies.set({
+            name: cookieName(id),
+            value: "",
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
+            path: "/",
+            maxAge: 0,
+            expires: new Date(0),
+        });
+
+        return response;
+    } catch (error) {
+        console.error("Public listing logout error:", error);
+        return NextResponse.json(
+            { error: "Unable to log out" },
             { status: 500 }
         );
     }

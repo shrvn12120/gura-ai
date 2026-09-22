@@ -3,26 +3,27 @@
 
   /*
    * ============================================================
-   * Guraidhoo AI / Aasandha AI Embeddable Chat Widget
+   * Explore Guraidhoo AI  Embeddable Chat Widget
    * ============================================================
    *
    * Usage:
    *
    * <script
-   *   src="https://chat.aasandha.ai/widget.js"
-   *   data-agent="aasandha"
+   *   src="http://localhost:3000/widget.js"
+   *   data-title="explore-guraidhoo-website"
+   *   data-url="http://localhost:3000"
+   *   data-mode="light"
    * ></script>
    *
    * Optional:
    *
-   * data-title="Aasandha AI"
+   * data-title="explore-guraidhoo-website"
    * data-subtitle="How can we help?"
-   * data-color="#7c3aed"
+   * data-icon-color="#7c3aed"
    * data-position="bottom-right"
    *
    * ============================================================
    */
-
 
   /*
    * ------------------------------------------------------------
@@ -36,7 +37,6 @@
 
   window.__AI_CHAT_WIDGET_LOADED__ = true;
 
-
   /*
    * ------------------------------------------------------------
    * Find current script
@@ -45,19 +45,13 @@
 
   const script =
     document.currentScript ||
-    document.querySelector(
-      'script[src*="/widget.js"]'
-    );
-
+    document.querySelector('script[src*="/widget.js"]');
 
   if (!script) {
-    console.error(
-      "[AI Widget] Could not find widget.js script."
-    );
+    // console.error("[AI Widget] Could not find widget.js script.");
 
     return;
   }
-
 
   /*
    * ------------------------------------------------------------
@@ -66,33 +60,21 @@
    */
 
   const config = {
+    agentId: script.getAttribute("data-agent") || "guraidhoo",
 
-    agentId:
-      script.getAttribute("data-agent") ||
-      "guraidhoo",
+    title: script.getAttribute("data-title") || "AI Concierge",
 
-    title:
-      script.getAttribute("data-title") ||
-      "AI Concierge",
+    subtitle: script.getAttribute("data-subtitle") || "How can I help?",
 
-    subtitle:
-      script.getAttribute("data-subtitle") ||
-      "How can I help?",
+    color: script.getAttribute("data-icon-color") || "#03fcb1",
 
-    color:
-      script.getAttribute("data-color") ||
-      "#7c3aed",
+    position: script.getAttribute("data-position") || "bottom-right",
 
-    position:
-      script.getAttribute("data-position") ||
-      "bottom-right",
-
-    baseUrl: script.getAttribute("data-url"),
-
-    token: script.getAttribute("data-token")
-
+    baseUrl:
+      script.getAttribute("data-url") || "https://ai.devemm.com",
+    colorSchema:script.getAttribute("data-mode") || "dark",
+   
   };
-
 
   /*
    * ------------------------------------------------------------
@@ -100,15 +82,9 @@
    * ------------------------------------------------------------
    */
 
-  if (
-    config.position !== "bottom-left" &&
-    config.position !== "bottom-right"
-  ) {
-
+  if (config.position !== "bottom-left" && config.position !== "bottom-right") {
     config.position = "bottom-right";
-
   }
-
 
   /*
    * ------------------------------------------------------------
@@ -117,21 +93,13 @@
    */
 
   function initializeWidget() {
-
     /*
      * Prevent duplicate initialization
      */
 
-    if (
-      document.getElementById(
-        "ai-widget-root"
-      )
-    ) {
-
+    if (document.getElementById("ai-widget-root")) {
       return;
-
     }
-
 
     /*
      * ----------------------------------------------------------
@@ -152,42 +120,25 @@
      *
      */
 
-    const host =
-      document.createElement("div");
+    const host = document.createElement("div");
 
+    host.id = "ai-widget-root";
 
-    host.id =
-      "ai-widget-root";
+    host.style.position = "fixed";
 
+    host.style.zIndex = "2147483647";
 
-    host.style.position =
-      "fixed";
+    host.style.width = "0";
 
+    host.style.height = "0";
 
-    host.style.zIndex =
-      "2147483647";
-
-
-    host.style.width =
-      "0";
-
-
-    host.style.height =
-      "0";
-
-
-    host.style.overflow =
-      "visible";
-
+    host.style.overflow = "visible";
 
     document.body.appendChild(host);
 
-
-    const shadow =
-      host.attachShadow({
-        mode: "open"
-      });
-
+    const shadow = host.attachShadow({
+      mode: "open",
+    });
 
     /*
      * ----------------------------------------------------------
@@ -195,9 +146,7 @@
      * ----------------------------------------------------------
      */
 
-    const style =
-      document.createElement("style");
-
+    const style = document.createElement("style");
 
     style.textContent = `
 
@@ -246,6 +195,44 @@
       }
 
 
+      .widget-overlay {
+
+        position: fixed;
+
+        inset: 0;
+
+        z-index: 2147483646;
+
+        background: rgba(15, 23, 42, 0.18);
+
+        backdrop-filter: blur(6px);
+
+        -webkit-backdrop-filter: blur(6px);
+
+        opacity: 0;
+
+        visibility: hidden;
+
+        pointer-events: none;
+
+        transition:
+          opacity .2s ease,
+          visibility .2s ease;
+
+      }
+
+
+      .widget-overlay.open {
+
+        opacity: 1;
+
+        visibility: visible;
+
+        pointer-events: auto;
+
+      }
+
+
       .widget-wrapper.bottom-right {
 
         right: 20px;
@@ -270,9 +257,11 @@
 
       .chat-container {
 
-        width: 390px;
+        position: relative;
 
-        height: 650px;
+        width: 10px;
+
+        height: 10px;
 
         max-width:
           calc(100vw - 30px);
@@ -286,8 +275,7 @@
 
         overflow: hidden;
 
-         border:
-          2px solid #ffffff;
+
 
 
 
@@ -326,6 +314,9 @@
 
 
       .chat-container.open {
+       width: 390px;
+
+        height: 650px;
 
         opacity: 1;
 
@@ -355,7 +346,6 @@
         height: 100%;
 
         border: 0;
-
         background: #ffffff;
 
       }
@@ -367,13 +357,63 @@
        * --------------------------------------------------------
        */
 
+      .chat-close {
+        
+        position: absolute;
+
+        top: 14px;
+
+        right: 14px;
+
+        z-index: 2;
+
+        width: 32px;
+
+        height: 32px;
+
+        border: 1px solid rgba(15, 23, 42, 0.08);
+
+        border-radius: 50%;
+
+        background: rgba(255, 255, 255, 0.92);
+
+        color: #111827;
+
+        display: none;
+
+        align-items: center;
+
+        justify-content: center;
+
+        cursor: pointer;
+
+        padding: 0;
+
+        margin: 0;
+
+        box-shadow:
+          0 8px 18px
+          rgba(15, 23, 42, 0.12);
+
+      }
+
+
+      .chat-close svg {
+
+        width: 15px;
+
+        height: 15px;
+
+      }
+
+
       .launcher {
 
         position: relative;
 
-        width: 58px;
+        width: 52px;
 
-        height: 58px;
+        height: 52px;
 
         border: 0;
 
@@ -522,6 +562,8 @@
           border-radius: 0;
 
           border: 0;
+          padding-bottom: 70px;
+          background: rgba(15, 23, 42, 0.18);
 
           transform:
             translateY(20px);
@@ -530,6 +572,8 @@
 
 
         .chat-container.open {
+        width: 100%;
+        height: 100%;
 
           transform:
             translateY(0);
@@ -539,9 +583,9 @@
 
         .launcher {
 
-          width: 56px;
+          width: 48px;
 
-          height: 56px;
+          height: 48px;
 
         }
 
@@ -549,9 +593,7 @@
 
     `;
 
-
     shadow.appendChild(style);
-
 
     /*
      * ----------------------------------------------------------
@@ -559,14 +601,17 @@
      * ----------------------------------------------------------
      */
 
-    const wrapper =
-      document.createElement("div");
+    const overlay = document.createElement("div");
 
+    overlay.className = "widget-overlay";
 
-    wrapper.className =
-      "widget-wrapper " +
-      config.position;
+    overlay.addEventListener("click", closeWidget);
 
+    shadow.appendChild(overlay);
+
+    const wrapper = document.createElement("div");
+
+    wrapper.className = "widget-wrapper " + config.position;
 
     /*
      * ----------------------------------------------------------
@@ -574,13 +619,9 @@
      * ----------------------------------------------------------
      */
 
-    const chatContainer =
-      document.createElement("div");
+    const chatContainer = document.createElement("div");
 
-
-    chatContainer.className =
-      "chat-container";
-
+    chatContainer.className = "chat-container";
 
     /*
      * ----------------------------------------------------------
@@ -588,29 +629,15 @@
      * ----------------------------------------------------------
      */
 
-    const iframe =
-      document.createElement("iframe");
+    const iframe = document.createElement("iframe");
 
+    iframe.className = "chat-iframe";
 
-    iframe.className =
-      "chat-iframe";
+    iframe.title = config.title;
 
+    iframe.setAttribute("allow", "clipboard-write");
 
-    iframe.title =
-      config.title;
-
-
-    iframe.setAttribute(
-      "allow",
-      "clipboard-write"
-    );
-
-
-    iframe.setAttribute(
-      "loading",
-      "lazy"
-    );
-
+    iframe.setAttribute("loading", "lazy");
 
     /*
      * ----------------------------------------------------------
@@ -618,42 +645,21 @@
      * ----------------------------------------------------------
      */
 
-    const embedUrl =
-      config.baseUrl+`?lan=${config.token}` 
+    const iframeUrl = new URL(config.baseUrl);
 
+    if (config.agentId) {
+      iframeUrl.searchParams.set("agent", config.agentId);
+    }
 
-    iframe.src =
-      embedUrl;
+    if (config.colorSchema) {
+      iframeUrl.searchParams.set("mode", config.colorSchema);
+    }
 
+    if (config.token) {
+      iframeUrl.searchParams.set("lan", config.token);
+    }
 
-    chatContainer.appendChild(
-      iframe
-    );
-
-
-    /*
-     * ----------------------------------------------------------
-     * Launcher button
-     * ----------------------------------------------------------
-     */
-
-    const launcher =
-      document.createElement("button");
-
-
-    launcher.className =
-      "launcher";
-
-
-    launcher.type =
-      "button";
-
-
-    launcher.setAttribute(
-      "aria-label",
-      "Open AI chat"
-    );
-
+    iframe.src = iframeUrl.toString();
 
     /*
      * ----------------------------------------------------------
@@ -691,7 +697,6 @@
 
     `;
 
-
     /*
      * ----------------------------------------------------------
      * Close icon
@@ -718,10 +723,31 @@
 
     `;
 
+    const launcher = document.createElement("button");
 
-    launcher.innerHTML =
-      chatIcon;
+    launcher.className = "launcher";
 
+    launcher.type = "button";
+
+
+    launcher.setAttribute("aria-label", "Open chat");
+
+    launcher.innerHTML = chatIcon;
+
+    const closeButton = document.createElement("button");
+
+    closeButton.type = "button";
+
+    closeButton.className = "chat-close";
+
+    closeButton.setAttribute("aria-label", "Close chat");
+
+    closeButton.innerHTML = closeIcon;
+
+    closeButton.addEventListener("click", closeWidget);
+
+    chatContainer.appendChild(closeButton);
+    chatContainer.appendChild(iframe);
 
     /*
      * ----------------------------------------------------------
@@ -729,18 +755,11 @@
      * ----------------------------------------------------------
      */
 
-    const notification =
-      document.createElement("span");
+    const notification = document.createElement("span");
 
+    notification.className = "notification";
 
-    notification.className =
-      "notification";
-
-
-    launcher.appendChild(
-      notification
-    );
-
+    launcher.appendChild(notification);
 
     /*
      * ----------------------------------------------------------
@@ -748,20 +767,11 @@
      * ----------------------------------------------------------
      */
 
-    wrapper.appendChild(
-      chatContainer
-    );
+    wrapper.appendChild(chatContainer);
 
+    wrapper.appendChild(launcher);
 
-    wrapper.appendChild(
-      launcher
-    );
-
-
-    shadow.appendChild(
-      wrapper
-    );
-
+    shadow.appendChild(wrapper);
 
     /*
      * ----------------------------------------------------------
@@ -771,7 +781,6 @@
 
     let isOpen = false;
 
-
     /*
      * ----------------------------------------------------------
      * Open
@@ -779,35 +788,20 @@
      */
 
     function openWidget() {
-
       isOpen = true;
 
+      chatContainer.classList.add("open");
 
-      chatContainer.classList.add(
-        "open"
-      );
+      overlay.classList.add("open");
 
+      launcher.setAttribute("aria-label", "Close AI chat");
 
-      launcher.setAttribute(
-        "aria-label",
-        "Close AI chat"
-      );
+      launcher.innerHTML = closeIcon;
 
+      launcher.appendChild(notification);
 
-      launcher.innerHTML =
-        closeIcon;
-
-
-      launcher.appendChild(
-        notification
-      );
-
-
-      notification.style.display =
-        "none";
-
+      notification.style.display = "none";
     }
-
 
     /*
      * ----------------------------------------------------------
@@ -816,31 +810,18 @@
      */
 
     function closeWidget() {
-
       isOpen = false;
 
+      chatContainer.classList.remove("open");
 
-      chatContainer.classList.remove(
-        "open"
-      );
+      overlay.classList.remove("open");
 
+      launcher.setAttribute("aria-label", "Open AI chat");
 
-      launcher.setAttribute(
-        "aria-label",
-        "Open AI chat"
-      );
+      launcher.innerHTML = chatIcon;
 
-
-      launcher.innerHTML =
-        chatIcon;
-
-
-      launcher.appendChild(
-        notification
-      );
-
+      launcher.appendChild(notification);
     }
-
 
     /*
      * ----------------------------------------------------------
@@ -849,19 +830,12 @@
      */
 
     function toggleWidget() {
-
       if (isOpen) {
-
         closeWidget();
-
       } else {
-
         openWidget();
-
       }
-
     }
-
 
     /*
      * ----------------------------------------------------------
@@ -869,11 +843,7 @@
      * ----------------------------------------------------------
      */
 
-    launcher.addEventListener(
-      "click",
-      toggleWidget
-    );
-
+    launcher.addEventListener("click", toggleWidget);
 
     /*
      * ----------------------------------------------------------
@@ -881,22 +851,11 @@
      * ----------------------------------------------------------
      */
 
-    document.addEventListener(
-      "keydown",
-      function (event) {
-
-        if (
-          event.key === "Escape" &&
-          isOpen
-        ) {
-
-          closeWidget();
-
-        }
-
+    document.addEventListener("keydown", function (event) {
+      if (event.key === "Escape" && isOpen) {
+        closeWidget();
       }
-    );
-
+    });
 
     /*
      * ----------------------------------------------------------
@@ -910,86 +869,51 @@
      *
      * window.parent.postMessage({
      *   type: "AI_WIDGET_CLOSE"
-     * }, "https://chat.aasandha.ai");
+     * }, "https://ai.devemm.com");
      *
      */
 
-    window.addEventListener(
-      "message",
-      function (event) {
+    window.addEventListener("message", function (event) {
+      /*
+       * Only accept messages from our own domain
+       */
 
-        /*
-         * Only accept messages from our own domain
-         */
-
-        if (
-          event.origin !==
-          config.baseUrl
-        ) {
-
-          return;
-
-        }
-
-
-        const data =
-          event.data;
-
-
-        if (!data) {
-          return;
-        }
-
-
-        /*
-         * Close widget
-         */
-
-        if (
-          data.type ===
-          "AI_WIDGET_CLOSE"
-        ) {
-
-          closeWidget();
-
-        }
-
-
-        /*
-         * Open widget
-         */
-
-        if (
-          data.type ===
-          "AI_WIDGET_OPEN"
-        ) {
-
-          openWidget();
-
-        }
-
-
-        /*
-         * Show notification
-         */
-
-        if (
-          data.type ===
-          "AI_WIDGET_NOTIFICATION"
-        ) {
-
-          if (!isOpen) {
-
-            notification.style.display =
-              "block";
-
-          }
-
-        }
-
+      if (event.origin !== config.baseUrl) {
+        return;
       }
-    );
 
+      const data = event.data;
+
+      if (!data) {
+        return;
+      }
+
+      /*
+       * Close widget
+       */
+
+      if (data.type === "AI_WIDGET_CLOSE") {
+        closeWidget();
+      }
+
+      /*
+       * Open widget
+       */
+
+      if (data.type === "AI_WIDGET_OPEN") {
+        openWidget();
+      }
+
+      /*
+       * Show notification
+       */
+
+      if (data.type === "AI_WIDGET_NOTIFICATION") {
+        if (!isOpen) {
+          notification.style.display = "block";
+        }
+      }
+    });
 
     /*
      * ----------------------------------------------------------
@@ -998,7 +922,6 @@
      */
 
     window.GuraidhooAI = {
-
       open: openWidget,
 
       close: closeWidget,
@@ -1006,38 +929,13 @@
       toggle: toggleWidget,
 
       isOpen: function () {
-
         return isOpen;
-
       },
 
-      agentId:
-        config.agentId
-
+      agentId: config.agentId,
     };
 
-
-    /*
-     * ----------------------------------------------------------
-     * Debug
-     * ----------------------------------------------------------
-     */
-
-    if (
-      window.location.hostname ===
-      "localhost"
-    ) {
-      console.log({cc: config.token})
-
-      console.log(
-        "[AI Widget] Initialized",
-        config
-      );
-
-    }
-
   }
-
 
   /*
    * ------------------------------------------------------------
@@ -1057,24 +955,11 @@
    * ------------------------------------------------------------
    */
 
-  if (
-    document.readyState ===
-    "loading"
-  ) {
-
-    document.addEventListener(
-      "DOMContentLoaded",
-      initializeWidget,
-      {
-        once: true
-      }
-    );
-
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initializeWidget, {
+      once: true,
+    });
   } else {
-
     initializeWidget();
-
   }
-
-
 })();

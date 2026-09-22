@@ -65,7 +65,7 @@ async function authorizeRequest(id: string) {
   const token = cookieStore.get(cookieName(id))?.value;
 
   if (!token) {
-    return { authorized: false, status: 401, error: "Access required" };
+    return { authorized: false, status: 401, error: "Access denied" };
   }
 
   try {

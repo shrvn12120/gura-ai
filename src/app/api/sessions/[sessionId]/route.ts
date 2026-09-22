@@ -7,6 +7,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ sessionId: string }> }
 ) {
+
   try {
     const { sessionId } = await params;
 

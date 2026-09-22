@@ -19,11 +19,10 @@ import {
 } from "@/components/ui/select";
 
 // Icons
-import { Loader2, Plus, Save, Trash } from "lucide-react";
+import { Loader2, Plus, Save, Share2Icon, Trash } from "lucide-react";
 import { Separator } from "../ui/separator";
 import { getDefaultMeta, MetaField, Social } from "@/lib/categories.config";
 import { ApiAttachmentUploader } from "./ImageKitAttachmentUploader";
-import { PasswordInput } from "../password";
 
 
 //  CATEGORY_SUBCATEGORY_META_CONFIGS,
@@ -271,7 +270,6 @@ const dynamicFields = Array.from(new Set([...defaultFields, ...subCategoryFields
 const booleanFields = dynamicFields.filter(isBooleanField);
 const otherFields = dynamicFields.filter((f) => !isBooleanField(f));
 
-
     return (
         <div className="max-w-8xl mx-auto p-6">
             <Card>
@@ -424,6 +422,9 @@ const otherFields = dynamicFields.filter((f) => !isBooleanField(f));
         </div>
 
         {form.public_access && (
+          <div>
+
+       
             <div className="space-y-2">
                 <Label htmlFor="public-password">
                     Public editing password
@@ -444,8 +445,28 @@ const otherFields = dynamicFields.filter((f) => !isBooleanField(f));
                     this listing. The password itself is never stored in
                     the database.
                 </p>
-                {/* <PasswordInput form={form} update={update} /> */}
             </div>
+         
+{
+  initialData?._id && (
+  <div className="flex items-center gap-2 mt-5">
+  <p className="max-w-62 truncate text-primary">
+    {`https://ai.devemm.com/public/${initialData?._id ?? ''}`}
+  </p>
+  <Button
+    size="icon-xs"
+    onClick={() => {
+      if (initialData?._id) {
+        navigator.clipboard.writeText(`https://ai.devemm.com/public/${initialData._id}`);
+      }
+    }}
+  >
+    <Share2Icon />
+  </Button>
+</div>
+  )
+}
+               </div>
         )}
     </CardContent>
 </Card>

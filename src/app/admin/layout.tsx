@@ -1,11 +1,22 @@
 import { AppSidebar } from "@/components/app-sidebar"
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { Metadata } from "next";
+import Script from "next/script";
 import { Suspense } from "react";
 
 export const metadata: Metadata = {
   title: "Admin | Explore guraidhoo chat",
   description: "Manage content here.",
+  robots: {
+    index: false,
+    follow: false,
+    nocache: true,
+    googleBot: {
+      index: false,
+      follow: false,
+      noimageindex: true,
+    },
+  },
 };
 
 // --- Beautiful Loading Skeleton ---
@@ -74,6 +85,15 @@ export default function Layout({ children }: { children: React.ReactNode }) {
  <div className="w-full space-y-6 flex flex-col items-center mx-auto p-6 overflow-auto">
          
           {children}
+          {/* <Script  src="http://localhost:3000/widget.js"
+          data-url="http://localhost:3000"
+     data-agent="explore-guraidhoo-website"
+     data-color="#42a9cd"
+     data-mode="dark"
+     /> */}
+
+    
+
         </div>
         </div>
        

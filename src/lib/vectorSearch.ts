@@ -191,8 +191,8 @@ const openai = new OpenAI({
 
 const EMBEDDING_MODEL = "text-embedding-3-small";
 
-const DEFAULT_LIMIT = 4;
-const MAX_LIMIT = 5;
+const DEFAULT_LIMIT = 8;
+const MAX_LIMIT = 10;
 
 function normalizeQuery(query: string) {
   return query
@@ -204,7 +204,7 @@ function normalizeQuery(query: string) {
 
 export type VectorSearchResult = {
   id: string;
-  title: string;
+  title: string | null;
   category: string | null;
   subCategory: string | null;
   description: string | null;
@@ -213,6 +213,12 @@ export type VectorSearchResult = {
   images: unknown;
   distance: number;
 };
+
+const MEMORY_CACHE_TTL_MS = 5 * 60 * 1000;
+const searchResultMemoryCache = new Map<
+  string,
+  { expiresAt: number; results: VectorSearchResult[] }
+>();
 
 function parseEmbedding(value: unknown): string {
   if (typeof value === "string") {
@@ -226,17 +232,20 @@ function parseEmbedding(value: unknown): string {
   throw new Error("Invalid embedding returned from database.");
 }
 
-function mapSearchResults(rows: any[]): VectorSearchResult[] {
+function mapSearchResults(
+  rows: Array<Record<string, unknown>>,
+): VectorSearchResult[] {
   return rows.map((row) => ({
-    id: row.id,
-    title: row.title,
-    category: row.category,
-    subCategory: row.subCategory,
-    description: row.description,
+    id: String(row.id ?? ""),
+    title: typeof row.title === "string" ? row.title : null,
+    category: typeof row.category === "string" ? row.category : null,
+    subCategory: typeof row.subCategory === "string" ? row.subCategory : null,
+    description:
+      typeof row.description === "string" ? row.description : null,
     contactInfo: row.contactInfo,
     metadata: row.metadata,
     images: row.images,
-    distance: Number(row.distance),
+    distance: Number(row.distance ?? 0),
   }));
 }
 
@@ -251,6 +260,18 @@ export async function vectorSearch(
   }
 
   const safeLimit = Math.min(Math.max(Math.floor(limit), 1), MAX_LIMIT);
+
+  const memoryCacheEntry = searchResultMemoryCache.get(normalizedQuery);
+  if (
+    memoryCacheEntry &&
+    memoryCacheEntry.expiresAt > Date.now()
+  ) {
+    return memoryCacheEntry.results.slice(0, safeLimit);
+  }
+
+  if (memoryCacheEntry) {
+    searchResultMemoryCache.delete(normalizedQuery);
+  }
 
   /*
    * ==================================================
@@ -293,13 +314,16 @@ export async function vectorSearch(
 
     const results = cachedResults.rows[0].results;
 
-    /*
-     * Cache was created with a specific limit.
-     *
-     * If the caller asks for fewer results,
-     * return only what was requested.
-     */
-    return Array.isArray(results) ? results.slice(0, safeLimit) : [];
+    if (Array.isArray(results)) {
+      const cached = results.slice(0, safeLimit) as VectorSearchResult[];
+      searchResultMemoryCache.set(normalizedQuery, {
+        expiresAt: Date.now() + MEMORY_CACHE_TTL_MS,
+        results: cached,
+      });
+      return cached;
+    }
+
+    return [];
   }
 
   /*
@@ -420,6 +444,12 @@ export async function vectorSearch(
   );
 
   const structuredResults = mapSearchResults(results.rows);
+  const trimmedResults = structuredResults.slice(0, safeLimit);
+
+  searchResultMemoryCache.set(normalizedQuery, {
+    expiresAt: Date.now() + MEMORY_CACHE_TTL_MS,
+    results: trimmedResults,
+  });
 
   /*
    * ==================================================
@@ -451,11 +481,11 @@ export async function vectorSearch(
         results = EXCLUDED.results,
         last_used_at = NOW()
       `,
-      [normalizedQuery, JSON.stringify(structuredResults)],
+      [normalizedQuery, JSON.stringify(trimmedResults)],
     );
   } catch (error) {
     console.error("⚠️ Failed to cache vector search results:", error);
   }
 
-  return structuredResults;
+  return trimmedResults;
 }

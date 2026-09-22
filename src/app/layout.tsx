@@ -4,7 +4,8 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "sonner";
-import Script from "next/script";
+import { Suspense } from "react";
+import WigetThemeHandler from "@/components/wiget-theme-handler";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -44,8 +45,7 @@ export const metadata: Metadata = {
     images: ["https://ai.devemm.com/og-image.webp"],
   },
 };
-
-export default function RootLayout({
+export default  function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
@@ -113,12 +113,15 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <Suspense fallback={<p></p>}>
+            <WigetThemeHandler />
+          </Suspense>
+
           {children}
           <Toaster />
-          
         </ThemeProvider>
+        
       </body>
-      
     </html>
   );
 }

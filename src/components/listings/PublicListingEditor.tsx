@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { LockKeyhole, Loader2, ShieldCheck } from "lucide-react";
+import { LockKeyhole, Loader2, ShieldCheck, Eye, EyeClosed } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import {
 export default function PublicListingEditor({ listingId }: { listingId: string }) {
   const router = useRouter();
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -71,9 +72,10 @@ export default function PublicListingEditor({ listingId }: { listingId: string }
 
         <CardContent className="space-y-4">
           <div className="space-y-2">
+            <div className="relative">
             <Input
-              type="password"
-              placeholder="Enter password"
+              type={showPassword ? "text" : "password"}
+              placeholder={!showPassword ? "**********" : "Enter password"} 
               value={password}
               disabled={loading}
               onChange={(e) => setPassword(e.target.value)}
@@ -82,8 +84,22 @@ export default function PublicListingEditor({ listingId }: { listingId: string }
                   authenticate();
                 }
               }}
-            />
 
+            />
+            <Button
+             onPointerDown={() => setShowPassword(true)}
+              onPointerUp={() => setShowPassword(false)}
+              onPointerLeave={() => setShowPassword(false)}
+              onPointerCancel={() => setShowPassword(false)}
+              size={"icon-xs"}
+              className="absolute right-1 top-1/2 -translate-y-1/2"
+            >
+              {
+                showPassword? <Eye size={10}/>: <EyeClosed size={10}/>
+              }
+
+            </Button>
+            </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
           </div>
 

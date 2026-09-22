@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { jwtVerify } from "jose";
+import type { Metadata } from "next";
 import PublicListingEditor from "@/components/listings/PublicListingEditor";
 import PublicListingForm from "@/components/listings/PublicListingForm";
 import { Suspense } from "react";
@@ -50,6 +51,86 @@ async function getListingWithDraft(id: string) {
     console.error("Error fetching listing from API:", error);
     return { listing: null, draft: null, publicAccessDisabled: false };
   }
+}
+
+function truncateText(value: string | null | undefined, maxLength = 160) {
+  if (!value) return "View and manage this public listing on Explore Guraidhoo.";
+
+  const trimmed = value.trim();
+  if (trimmed.length <= maxLength) {
+    return trimmed;
+  }
+
+  return `${trimmed.slice(0, maxLength - 1).trimEnd()}…`;
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const { listing } = await getListingWithDraft(id);
+
+  const baseUrl =
+    process.env.NEXT_PUBLIC_APP_URL ||
+    (process.env.NODE_ENV === "development"
+      ? "http://localhost:3000"
+      : "https://ai.devemm.com");
+
+  const canonicalUrl = `${baseUrl}/public/${id}`;
+  const title = listing?.title
+    ? `${listing.title} | Public Listing`
+    : "Public Listing | Explore Guraidhoo";
+  const description = truncateText(
+    listing?.description || "View and manage this public listing on Explore Guraidhoo.",
+    160,
+  );
+
+  const imageUrl = (() => {
+    const images = Array.isArray(listing?.images) ? listing.images : [];
+
+    const firstImage = images.find((image:any) => {
+      if (typeof image === "string") return !!image;
+      return Boolean((image as { url?: string })?.url);
+    });
+
+    if (typeof firstImage === "string") return firstImage;
+    return (firstImage as { url?: string } | undefined)?.url;
+  })();
+
+  return {
+    title,
+    description,
+    alternates: {
+      canonical: canonicalUrl,
+    },
+    openGraph: {
+      title,
+      description,
+      url: canonicalUrl,
+      siteName: "Explore Guraidhoo",
+      type: "website",
+      ...(imageUrl
+        ? {
+            images: [
+              {
+                url: imageUrl,
+                width: 1200,
+                height: 630,
+                alt: title,
+              },
+            ],
+          }
+        : {}),
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      ...(imageUrl ? { images: [imageUrl] } : {}),
+    },
+  };
 }
 
 async function ServerPage({
@@ -116,6 +197,7 @@ async function ServerPage({
     </main>
   );
 }
+
 
 export default function Page({
   params,

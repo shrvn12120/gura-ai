@@ -5,6 +5,7 @@ import React, {
   useRef,
   useEffect,
   useMemo,
+  useCallback,
 } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -47,29 +48,7 @@ import {
   saveInteractionId,
   type StoredMessage,
 } from "@/lib/chatStorage";
-const asciiArt = `
-  /\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\
- /                                        \\
-<  (>:)              ||              (<:)  |
->   \\ \\             /||\\             / /   >
-<    \\ \\           / || \\           / /    <
->     \\ \\____     /  ||  \\     ____/ /     >
-<      \\____/\\   ====++====   /\\____/      <
->           \\ \\==    ||    ==/ /           >
-<            \\====   ||   ====/            <
->                 \\  ||  /                 >
-<  ==================++==================  <
->                 /  ||  \\                 >
-<            /====   ||   ====\\            <
->           / /==    ||    ==/ \\           >
-<      /____\\/   ====++====   \\/____\\      <
->     / /----     \\  ||  /     ----\\ \\     >
-<    / /           \\ || /           \\ \\    <
->   / /             \\||/             \\ \\   >
-<  (<:)              ||              (>:)  |
- \\                                        /
-  \\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/
-`;
+
 
 /* =========================================================
    TYPES
@@ -80,6 +59,107 @@ type Message = StoredMessage;
 interface Props {
   notices: Notice[];
 }
+
+type MessageRowProps = {
+  message: Message;
+  index: number;
+  isLastAssistant: boolean;
+  loading: boolean;
+  copiedIndex: number | null;
+  onCopy: (text: string, index: number) => void;
+  onRetry: () => void;
+};
+
+const MessageRow = React.memo(
+  function MessageRow({
+    message,
+    index,
+    isLastAssistant,
+    loading,
+    copiedIndex,
+    onCopy,
+    onRetry,
+  }: MessageRowProps) {
+    const isUser = message.role === "user";
+
+    return (
+      <div
+        className={`flex items-start gap-3.5 group ${
+          isUser ? "justify-end" : "justify-start"
+        }`}
+      >
+        {isUser ? (
+          <div className="max-w-[85%] sm:max-w-[75%] rounded-2xl rounded-tr-xs bg-teal-600 px-4 py-3 text-sm text-white shadow-md shadow-teal-950/20">
+            <p className="leading-relaxed whitespace-pre-wrap">
+              {message.content}
+            </p>
+          </div>
+        ) : (
+          <div className="max-w-[95%] sm:max-w-[85%] space-y-2 pt-0.5 w-full">
+            <div className="text-sm dark:text-slate-200 text-teal-700 leading-relaxed font-normal p-4 rounded-2xl rounded-tl-xs shadow-sm">
+              {message.content ? (
+                <MarkdownMessage content={message.content} />
+              ) : (
+                loading && isLastAssistant && (
+                  <div className="flex items-center gap-1.5 py-1 text-teal-400 text-sm">
+                    <span className="h-2 w-2 rounded-full bg-teal-400 animate-bounce [animation-delay:-0.3s]" />
+                    <span className="h-2 w-2 rounded-full bg-teal-400 animate-bounce [animation-delay:-0.15s]" />
+                    <span className="h-2 w-2 rounded-full bg-teal-400 animate-bounce" />
+                  </div>
+                )
+              )}
+            </div>
+
+            {message.content && (
+              <div className="flex items-center gap-1 text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity pl-1">
+                <button
+                  onClick={() => onCopy(message.content, index)}
+                  className="flex items-center gap-1 p-1.5 rounded-lg hover:bg-slate-800 hover:text-slate-300 text-[11px] transition-colors"
+                >
+                  {copiedIndex === index ? (
+                    <>
+                      <Check className="h-3.5 w-3.5 text-teal-400" />
+                      <span className="text-teal-400">Copied</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-3.5 w-3.5" />
+                      <span>Copy</span>
+                    </>
+                  )}
+                </button>
+
+                {isLastAssistant && (
+                  <button
+                    onClick={onRetry}
+                    disabled={loading}
+                    className="flex items-center gap-1 p-1.5 rounded-lg hover:bg-slate-800 hover:text-slate-300 text-[11px] transition-colors disabled:opacity-50"
+                  >
+                    <RotateCw className="h-3.5 w-3.5" />
+                    <span>Retry</span>
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  },
+  (prev, next) => {
+    return (
+      prev.message === next.message &&
+      prev.index === next.index &&
+      prev.isLastAssistant === next.isLastAssistant &&
+      prev.loading === next.loading &&
+      prev.copiedIndex === next.copiedIndex &&
+      prev.onCopy === next.onCopy &&
+      prev.onRetry === next.onRetry
+    );
+  }
+);
+
+MessageRow.displayName = "MessageRow";
 
 /* =========================================================
    MARKDOWN FORMATTER
@@ -135,6 +215,10 @@ export function formatStreamedMarkdown(
   return formatted;
 }
 
+function getTimestampMs(): number {
+  return Date.now();
+}
+
 /* =========================================================
    CHAT UI
 ========================================================= */
@@ -187,8 +271,23 @@ export default function ChatUi({
       null
     );
 
+  const scrollViewportRef =
+    useRef<HTMLDivElement | null>(null);
+
   const placeholderIndexRef =
     useRef(0);
+
+  const pendingAssistantUpdateRef =
+    useRef<number | null>(null);
+
+  const pendingScrollFrameRef =
+    useRef<number | null>(null);
+
+  const lastRenderedAssistantTextRef =
+    useRef("");
+
+  const shouldFollowScrollRef =
+    useRef(true);
 
   const chatLimit = 20;
 
@@ -232,11 +331,6 @@ export default function ChatUi({
 
   useEffect(() => {
     let cancelled = false;
-console.log(`%c${asciiArt}`, 'font-family: monospace; color: #007799; font-weight: bold;');
-console.log(
-  '%c   EXPLORE GURAIDHOO AI GUIDE   ',
-  'background: #007799; color: #ffffff; font-size: 14px; font-weight: bold; padding: 4px 8px; border-radius: 4px;'
-);
     async function initializeChat() {
       try {
         setHistoryLoading(true);
@@ -333,19 +427,96 @@ console.log(
      AUTO SCROLL
   ======================================================= */
 
+  const isNearBottom = useCallback(
+    (element: HTMLDivElement | null) => {
+      if (!element) {
+        return true;
+      }
+
+      const threshold = 140;
+      const distance =
+        element.scrollHeight -
+        element.scrollTop -
+        element.clientHeight;
+
+      return distance <= threshold;
+    },
+    []
+  );
+
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({
-      behavior: "smooth",
+    const element = scrollViewportRef.current;
+
+    if (!element) {
+      return;
+    }
+
+    const handleScroll = () => {
+      shouldFollowScrollRef.current =
+        isNearBottom(element);
+    };
+
+    handleScroll();
+    element.addEventListener("scroll", handleScroll, {
+      passive: true,
     });
-  }, [messages, toolStatus]);
+
+    return () => {
+      element.removeEventListener("scroll", handleScroll);
+      if (
+        pendingScrollFrameRef.current !== null
+      ) {
+        cancelAnimationFrame(
+          pendingScrollFrameRef.current
+        );
+        pendingScrollFrameRef.current = null;
+      }
+    };
+  }, [isNearBottom]);
+
+  useEffect(() => {
+    const element = scrollViewportRef.current;
+
+    if (!element) {
+      return;
+    }
+
+    const shouldAutoScroll =
+      isNearBottom(element);
+
+    if (!shouldAutoScroll) {
+      return;
+    }
+
+    const behavior: ScrollBehavior =
+      loading ? "auto" : "smooth";
+
+    const frame = requestAnimationFrame(() => {
+      const current = scrollViewportRef.current;
+
+      if (!current) {
+        return;
+      }
+
+      current.scrollTo({
+        top: current.scrollHeight,
+        behavior,
+      });
+    });
+
+    return () => {
+      cancelAnimationFrame(frame);
+    };
+  }, [messages, toolStatus, loading, isNearBottom]);
 
   /* =======================================================
      SEND MESSAGE
   ======================================================= */
 
-  async function sendMessage(
-    customQuery?: string
-  ) {
+  const sendMessage = useCallback(
+    async function sendMessage(
+      customQuery?: string
+    ) {
     const query = (
       customQuery || input
     ).trim();
@@ -368,7 +539,7 @@ console.log(
       id: createMessageId(),
       role: "user",
       content: query,
-      createdAt: Date.now(),
+      createdAt: getTimestampMs(),
     };
 
     /*
@@ -397,7 +568,7 @@ console.log(
       id: assistantMessageId,
       role: "assistant",
       content: "",
-      createdAt: Date.now(),
+      createdAt: getTimestampMs(),
     };
 
     setMessages((prev) => [
@@ -419,6 +590,58 @@ console.log(
      * assistant response.
      */
     let fullResponseText = "";
+    lastRenderedAssistantTextRef.current = "";
+
+    const flushAssistantUpdate = () => {
+      if (
+        pendingAssistantUpdateRef.current !==
+        null
+      ) {
+        window.clearTimeout(
+          pendingAssistantUpdateRef.current
+        );
+        pendingAssistantUpdateRef.current =
+          null;
+      }
+
+      if (
+        fullResponseText ===
+        lastRenderedAssistantTextRef.current
+      ) {
+        return;
+      }
+
+      lastRenderedAssistantTextRef.current =
+        fullResponseText;
+
+      setMessages((prev) =>
+        prev.map((message) =>
+          message.id ===
+          assistantMessageId
+            ? {
+                ...message,
+                content:
+                  fullResponseText,
+              }
+            : message
+        )
+      );
+    };
+
+    const scheduleAssistantUpdate = () => {
+      if (
+        pendingAssistantUpdateRef.current
+      ) {
+        return;
+      }
+
+      pendingAssistantUpdateRef.current =
+        window.setTimeout(() => {
+          pendingAssistantUpdateRef.current =
+            null;
+          flushAssistantUpdate();
+        }, 120);
+    };
 
     /*
      * Track whether the response successfully
@@ -432,7 +655,7 @@ console.log(
       ================================================ */
 
       const res = await fetch(
-        "/api/chat/v2",
+        "/api/chat/v3",
         {
           method: "POST",
 
@@ -519,11 +742,23 @@ console.log(
           return;
         }
 
-        let event: any;
+        let event: {
+        type?: string;
+        delta?: string;
+        tool?: string;
+        message?: string;
+        interactionId?: string;
+      };
 
         try {
           event =
-            JSON.parse(trimmed);
+            JSON.parse(trimmed) as {
+              type?: string;
+              delta?: string;
+              tool?: string;
+              message?: string;
+              interactionId?: string;
+            };
         } catch (error) {
           console.error(
             "Failed to parse NDJSON line:",
@@ -545,27 +780,7 @@ console.log(
         ) {
           fullResponseText +=
             event.delta;
-
-          const cleanContent =
-            formatStreamedMarkdown(
-              fullResponseText
-            );
-
-          setMessages(
-            (prev) => {
-              return prev.map(
-                (message) =>
-                  message.id ===
-                  assistantMessageId
-                    ? {
-                        ...message,
-                        content:
-                          cleanContent,
-                      }
-                    : message
-              );
-            }
-          );
+          scheduleAssistantUpdate();
 
           return;
         }
@@ -615,6 +830,8 @@ console.log(
         ) {
           setToolStatus(null);
 
+          flushAssistantUpdate();
+
           /*
            * Save the Gemini interaction ID.
            *
@@ -655,13 +872,11 @@ console.log(
                   fullResponseText
                 ),
 
-              createdAt: Date.now(),
+              createdAt: getTimestampMs(),
             });
           }
 
           completed = true;
-
-         
 
           return;
         }
@@ -758,6 +973,17 @@ console.log(
         error
       );
 
+      if (
+        pendingAssistantUpdateRef.current !==
+        null
+      ) {
+        window.clearTimeout(
+          pendingAssistantUpdateRef.current
+        );
+        pendingAssistantUpdateRef.current =
+          null;
+      }
+
       /*
        * Don't save a failed assistant
        * response to localStorage.
@@ -781,37 +1007,51 @@ console.log(
           )
       );
     } finally {
+      if (
+        pendingAssistantUpdateRef.current !==
+        null
+      ) {
+        window.clearTimeout(
+          pendingAssistantUpdateRef.current
+        );
+        pendingAssistantUpdateRef.current =
+          null;
+      }
+
       setLoading(false);
       setToolStatus(null);
     }
-  }
+  }, [input, loading, historyLoading, interactionId]);
 
   /* =======================================================
      COPY
   ======================================================= */
 
-  const handleCopy = (
-    text: string,
-    index: number
-  ) => {
-    navigator.clipboard.writeText(
-      text
-    );
+  const handleCopy = useCallback(
+    (
+      text: string,
+      index: number
+    ) => {
+      navigator.clipboard.writeText(
+        text
+      );
 
-    setCopiedIndex(index);
+      setCopiedIndex(index);
 
-    setTimeout(
-      () =>
-        setCopiedIndex(null),
-      2000
-    );
-  };
+      setTimeout(
+        () =>
+          setCopiedIndex(null),
+        2000
+      );
+    },
+    []
+  );
 
   /* =======================================================
      RETRY
   ======================================================= */
 
-  const handleRetry = () => {
+  const handleRetry = useCallback(() => {
     if (
       messages.length < 2 ||
       loading
@@ -835,7 +1075,7 @@ console.log(
         lastUserMessage.content
       );
     }
-  };
+  }, [messages, loading, sendMessage]);
 
   /* =======================================================
      NEW CHAT
@@ -928,13 +1168,13 @@ console.log(
   ======================================================= */
 
   return (
-    <div className="flex flex-col h-dvh bg-slate-950 font-sans antialiased text-slate-100 overflow-hidden relative">
+    <div className="flex flex-col h-dvh bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100 font-sans antialiased overflow-hidden relative">
 
       {/* =================================================
           HEADER
       ================================================= */}
 
-      <header className="shrink-0 z-50 flex items-center justify-between border-b border-slate-800/80 bg-slate-950/90 px-4 md:px-8 py-3 backdrop-blur-xl">
+      <header className="shrink-0 z-50 flex items-center justify-between border-b border-slate-200/80 bg-white/90 px-4 md:px-8 py-3 backdrop-blur-xl dark:border-slate-800/80 dark:bg-slate-950/90">
 
         <div className="flex items-center gap-3">
 
@@ -958,7 +1198,7 @@ console.log(
 
             <div className="flex items-center gap-2">
 
-              <h1 className="text-sm font-semibold tracking-tight leading-tight text-slate-100">
+              <h1 className="text-sm font-semibold tracking-tight leading-tight text-slate-900 dark:text-slate-100">
                 Explore Guraidhoo
               </h1>
 
@@ -1003,7 +1243,7 @@ console.log(
 
                 <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
 
-                Pre-release v1.0.0-beta.4
+                Pre-release v1.0.0-beta.5
 
               </p>
             )}
@@ -1025,7 +1265,7 @@ console.log(
             handleNewChat
           }
           variant="outline"
-          className="h-8 px-3 text-xs font-medium rounded-xl border-slate-800 bg-slate-900/50 hover:bg-slate-800 text-slate-300 hover:text-white transition-all shadow-xs"
+          className="h-8 px-3 text-xs font-medium rounded-xl border-slate-200 bg-white/80 text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:border-slate-800 dark:bg-slate-900/50 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white transition-all shadow-xs"
           size="sm"
         >
 
@@ -1060,7 +1300,7 @@ console.log(
 
                 <div className="absolute -inset-1 rounded-2xl bg-linear-to-r from-teal-500 to-emerald-500 opacity-30 blur-lg" />
 
-                <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-900 border border-teal-500/30 text-teal-400 shadow-xl">
+                <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 border border-teal-500/30 text-teal-600 shadow-xl dark:bg-slate-900 dark:text-teal-400">
 
                   <Sparkles className="h-7 w-7" />
 
@@ -1148,7 +1388,7 @@ console.log(
                           item.title
                         )
                       }
-                      className="flex items-start gap-3 p-3.5 rounded-2xl bg-slate-900/60 hover:bg-slate-800/80 border border-slate-800/80 hover:border-teal-500/30 text-left transition-all group"
+                      className="flex items-start gap-3 p-3.5 rounded-2xl bg-slate-100/80 hover:bg-slate-200/80 border border-slate-200 hover:border-teal-500/30 text-left transition-all group dark:bg-slate-900/60 dark:hover:bg-slate-800/80 dark:border-slate-800/80"
                     >
 
                       <item.icon className="h-5 w-5 text-teal-400 shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
@@ -1186,152 +1426,21 @@ console.log(
                   MESSAGES
               ================================================= */}
 
-              {messages.map(
-                (
-                  msg,
-                  i
-                ) => (
-
-                  <div
-                    key={
-                      msg.id ||
-                      i
-                    }
-                    className={`flex items-start gap-3.5 group ${
-                      msg.role ===
-                      "user"
-                        ? "justify-end"
-                        : "justify-start"
-                    }`}
-                  >
-
-                    {msg.role ===
-                    "user" ? (
-
-                      <div className="max-w-[85%] sm:max-w-[75%] rounded-2xl rounded-tr-xs bg-teal-600 px-4 py-3 text-sm text-white shadow-md shadow-teal-950/20">
-
-                        <p className="leading-relaxed whitespace-pre-wrap">
-                          {
-                            msg.content
-                          }
-                        </p>
-
-                      </div>
-
-                    ) : (
-
-                      <div className="max-w-[95%] sm:max-w-[85%] space-y-2 pt-0.5 w-full">
-
-                        <div className="text-sm text-slate-200 leading-relaxed font-normal p-4 rounded-2xl rounded-tl-xs shadow-sm">
-
-                          {msg.content ? (
-
-                            <MarkdownMessage
-                              content={
-                                msg.content
-                              }
-                            />
-
-                          ) : (
-
-                            loading &&
-                            i ===
-                              messages.length -
-                                1 && (
-
-                              <div className="flex items-center gap-1.5 py-1 text-teal-400 text-sm">
-
-                                <span className="h-2 w-2 rounded-full bg-teal-400 animate-bounce [animation-delay:-0.3s]" />
-
-                                <span className="h-2 w-2 rounded-full bg-teal-400 animate-bounce [animation-delay:-0.15s]" />
-
-                                <span className="h-2 w-2 rounded-full bg-teal-400 animate-bounce" />
-
-                              </div>
-
-                            )
-
-                          )}
-
-                        </div>
-
-                        {/* ASSISTANT ACTIONS */}
-
-                        {msg.content && (
-
-                          <div className="flex items-center gap-1 text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity pl-1">
-
-                            <button
-                              onClick={() =>
-                                handleCopy(
-                                  msg.content,
-                                  i
-                                )
-                              }
-                              className="flex items-center gap-1 p-1.5 rounded-lg hover:bg-slate-800 hover:text-slate-300 text-[11px] transition-colors"
-                            >
-
-                              {copiedIndex ===
-                              i ? (
-
-                                <>
-                                  <Check className="h-3.5 w-3.5 text-teal-400" />
-
-                                  <span className="text-teal-400">
-                                    Copied
-                                  </span>
-                                </>
-
-                              ) : (
-
-                                <>
-                                  <Copy className="h-3.5 w-3.5" />
-
-                                  <span>
-                                    Copy
-                                  </span>
-                                </>
-
-                              )}
-
-                            </button>
-
-                            {i ===
-                              messages.length -
-                                1 && (
-
-                              <button
-                                onClick={
-                                  handleRetry
-                                }
-                                disabled={
-                                  loading
-                                }
-                                className="flex items-center gap-1 p-1.5 rounded-lg hover:bg-slate-800 hover:text-slate-300 text-[11px] transition-colors disabled:opacity-50"
-                              >
-
-                                <RotateCw className="h-3.5 w-3.5" />
-
-                                <span>
-                                  Retry
-                                </span>
-
-                              </button>
-
-                            )}
-
-                          </div>
-
-                        )}
-
-                      </div>
-
-                    )}
-
-                  </div>
-
-                )
-              )}
+              {messages.map((msg, i) => (
+                <MessageRow
+                  key={msg.id ?? `message-${i}`}
+                  message={msg}
+                  index={i}
+                  isLastAssistant={
+                    msg.role === "assistant" &&
+                    i === messages.length - 1
+                  }
+                  loading={loading}
+                  copiedIndex={copiedIndex}
+                  onCopy={handleCopy}
+                  onRetry={handleRetry}
+                />
+              ))}
 
               {/* =================================================
                   TOOL STATUS
@@ -1373,11 +1482,11 @@ console.log(
           INPUT
       ================================================= */}
 
-      <div className="shrink-0 z-50 p-4 bg-linear-to-t from-slate-950 via-slate-950/95 to-transparent">
+      <div className="shrink-0 z-50 p-4 bg-linear-to-t from-white via-white/95 to-transparent dark:from-slate-950 dark:via-slate-950/95 dark:to-transparent">
 
         <div className="mx-auto max-w-3xl">
 
-          <div className="relative flex items-end rounded-2xl border border-slate-800 bg-slate-900/90 backdrop-blur-xl shadow-2xl focus-within:border-teal-500/50 focus-within:ring-1 focus-within:ring-teal-500/50 transition-all duration-200">
+          <div className="relative flex items-end rounded-2xl border border-slate-200 bg-white/90 backdrop-blur-xl shadow-md focus-within:border-teal-500/50 focus-within:ring-1 focus-within:ring-teal-500/50 transition-all duration-200 dark:border-slate-800 dark:bg-slate-900/90">
 
             <Textarea
               ref={
@@ -1407,7 +1516,7 @@ console.log(
                   chatLimit ||
                 historyLoading
               }
-              className="w-full min-h-13 max-h-32 resize-none border-0 bg-transparent py-3.5 pl-4 pr-14 text-base md:text-sm text-slate-100 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-slate-500"
+              className="w-full min-h-13 max-h-32 resize-none border-0 bg-transparent py-3.5 pl-4 pr-14 text-base md:text-sm text-slate-900 placeholder:text-slate-500 focus-visible:ring-0 focus-visible:ring-offset-0 dark:text-slate-100"
               rows={1}
             />
 

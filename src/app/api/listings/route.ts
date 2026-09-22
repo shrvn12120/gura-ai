@@ -68,7 +68,9 @@ export async function POST(req: NextRequest) {
         $8,
         $9,
         $10,
-        $11::vector
+        $11::vector,
+        $12,
+        $13
       )
 
       RETURNING *;
@@ -95,6 +97,8 @@ export async function POST(req: NextRequest) {
         publicPasswordHash?? null,
       ]
     );
+
+
 
     revalidatePath("/admin/listings");
 

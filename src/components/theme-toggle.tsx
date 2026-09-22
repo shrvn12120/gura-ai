@@ -7,7 +7,7 @@ import { useState } from "react";
 
 export function ThemeChanger() {
   const { theme, setTheme } = useTheme();
-  const [currentTheme, setCurrentTheme] = useState(theme || "dark")
+  const [currentTheme, setCurrentTheme] = useState(theme || "system")
 
   return (
     <div className="inline-flex gap-2 items-center rounded-xl border bg-background  shadow-sm">

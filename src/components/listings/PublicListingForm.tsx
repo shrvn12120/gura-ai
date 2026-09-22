@@ -2,9 +2,20 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, Loader2, Send, X } from "lucide-react";
+import { CheckCircle2, Loader2, LogOut, Send, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import {
   Card,
   CardContent,
@@ -51,7 +62,7 @@ type Listing = {
     alt: string;
   }[];
 
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   active: boolean;
 };
 
@@ -60,7 +71,7 @@ type Draft = {
   description: string;
   contact_info: Listing["contact_info"];
   images: Listing["images"];
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   active: boolean;
   status: "pending" | "pending_review" | "approved" | "rejected";
   rejection_reason: string | null;
@@ -86,8 +97,9 @@ export default function PublicListingForm({
 
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-const isPendingReview = draft?.status === "pending_review";
- const [form, setForm] = useState(() => ({
+  const [logoutLoading, setLogoutLoading] = useState(false);
+  const isPendingReview = draft?.status === "pending_review";
+  const [form, setForm] = useState(() => ({
     // If pending review, display the draft values; otherwise (rejected/none), show live listing data
     description: isPendingReview
       ? (draft?.description ?? listing.description ?? "")
@@ -110,11 +122,11 @@ const isPendingReview = draft?.status === "pending_review";
       : (listing.active ?? false),
   }));
 
-  function update(key: keyof typeof form, value: any) {
+  function update(key: keyof typeof form, value: (typeof form)[keyof typeof form]) {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
-  function updateContact(key: keyof Listing["contact_info"], value: any) {
+  function updateContact(key: keyof Listing["contact_info"], value: unknown) {
     setForm((prev) => ({
       ...prev,
       contact_info: {
@@ -170,7 +182,7 @@ const isPendingReview = draft?.status === "pending_review";
     }));
   }
 
-  function updateMeta(key: string, value: any) {
+  function updateMeta(key: string, value: unknown) {
     setForm((prev) => ({
       ...prev,
       metadata: { ...prev.metadata, [key]: value },
@@ -205,9 +217,9 @@ const isPendingReview = draft?.status === "pending_review";
       setDraft(data.data);
       if (onDraftChange) onDraftChange(data.data);
       setMessage("Your changes have been saved as a draft.");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setError(err?.message || "Unable to save changes.");
+      setError(err instanceof Error ? err.message : "Unable to save changes.");
     } finally {
       setLoading(false);
     }
@@ -242,11 +254,36 @@ const isPendingReview = draft?.status === "pending_review";
       if (onDraftChange) onDraftChange(data.data);
       setMessage("Your changes have been submitted for admin approval.");
       router.refresh();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setError(err?.message || "Unable to submit changes.");
+      setError(err instanceof Error ? err.message : "Unable to submit changes.");
     } finally {
       setSubmitLoading(false);
+    }
+  }
+
+  async function logout() {
+    try {
+      setLogoutLoading(true);
+      setError("");
+      setMessage("");
+
+      const res = await fetch(`/api/public/listings/${listingId}/access`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error || "Unable to log out.");
+      }
+
+      router.refresh();
+    } catch (err: unknown) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : "Unable to log out.");
+    } finally {
+      setLogoutLoading(false);
     }
   }
 
@@ -254,12 +291,48 @@ const isPendingReview = draft?.status === "pending_review";
 
   return (
     <div className="mx-auto w-full max-w-6xl p-4 md:p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold">Update Listing</h1>
-        <p className="text-muted-foreground">
-          Update the information for{" "}
-          <span className="font-medium text-foreground">{listing.title}</span>
-        </p>
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Update Listing</h1>
+          <p className="text-muted-foreground">
+            Update the information for{" "}
+            <span className="font-medium text-foreground">{listing.title}</span>
+          </p>
+        </div>
+
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button type="button" variant="outline" className="border-destructive! hover:border-popover! hover:text-accent! hover:bg-destructive! transition-all!" disabled={logoutLoading}>
+              {logoutLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Signing out...
+                </>
+              ) : (
+                <>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Log out
+                </>
+              )}
+            </Button>
+          </AlertDialogTrigger>
+
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Log out of this listing?</AlertDialogTitle>
+              <AlertDialogDescription>
+                You will need to enter the listing password again before continuing to edit.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={logout} disabled={logoutLoading}>
+                {logoutLoading ? "Signing out..." : "Log out"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
 
       {draft?.status === "pending_review" && (
@@ -321,7 +394,7 @@ const isPendingReview = draft?.status === "pending_review";
       )}
 
       <div className="space-y-6">
-        <Card>
+        <Card className="ccxx">
           <CardHeader>
             <CardTitle>Listing</CardTitle>
             <CardDescription>
