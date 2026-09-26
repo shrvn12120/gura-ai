@@ -955,6 +955,7 @@ async function safeLogConversation(params: {
   try {
     await logGeminiRequest({
       sessionId: params.sessionId,
+      model: "",
       userMessage: params.userMessage,
       assistantResponse: params.assistantResponse,
       usage: params.usage,

@@ -472,6 +472,7 @@ async function safeLogConversation(params: {
     console.time("logStart");
     await logGeminiRequest({
       sessionId: params.sessionId,
+      model: "",
       userMessage: params.userMessage,
       assistantResponse: params.assistantResponse,
       usage: params.usage,

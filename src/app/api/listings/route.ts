@@ -4,15 +4,20 @@ import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 
-function buildText(data: any) {
-  return `
-Title: ${data.title}
-Category: ${data.category}
-SubCategory: ${data.subCategory}
-Description: ${data.description}
-Metadata: ${JSON.stringify(data.metadata)}
-`;
+
+function buildText(data: Record<string, unknown>): string {
+  const parts: string[] = [];
+
+  if (data.title) parts.push(`Title: ${data.title}`);
+  if (data.category) parts.push(`Category: ${data.category}`);
+  if (data.description) parts.push(`Description: ${data.description}`);
+  if (data.metadata && Object.keys(data.metadata).length > 0) {
+    parts.push(`Metadata: ${JSON.stringify(data.metadata)}`);
+  }
+
+  return parts.join("\n").trim();
 }
+
 
 export async function POST(req: NextRequest) {
   try {
@@ -33,6 +38,7 @@ export async function POST(req: NextRequest) {
     const embeddingResponse = await openai.embeddings.create({
       model: "text-embedding-3-small",
       input: searchableText,
+      dimensions: 512,
     });
 
     const embedding = embeddingResponse.data[0].embedding;

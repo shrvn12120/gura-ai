@@ -2,7 +2,8 @@
 
 import React, { useMemo } from "react";
 import Image from "next/image";
-import ReactMarkdown, { type Components } from "react-markdown";
+// 1. ADD defaultUrlTransform TO YOUR IMPORTS BELOW
+import ReactMarkdown, { type Components, defaultUrlTransform } from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 interface Props {
@@ -15,10 +16,8 @@ interface Props {
 function getTextDirection(text: string): "rtl" | "ltr" {
   if (!text) return "ltr";
 
-  // Unicode regex for Thaana (\u0780-\u07BF), Arabic, Hebrew
   const rtlRegex = /[\u0780-\u07BF\u0600-\u06FF\u0590-\u05FF]/;
 
-  // Strip code blocks to avoid false direction detection from code snippets
   const cleanText = text
     .replace(/```[\s\S]*?```/g, "")
     .replace(/`[^`]*`/g, "")
@@ -68,7 +67,6 @@ MarkdownImage.displayName = "MarkdownImage";
 const MarkdownMessage = ({ content }: Props) => {
   const markdown = useMemo(() => content, [content]);
 
-  // Detect text direction (RTL for Thaana/Arabic, LTR otherwise)
   const dir = useMemo(() => getTextDirection(content), [content]);
   const isRtl = dir === "rtl";
 
@@ -82,6 +80,7 @@ const MarkdownMessage = ({ content }: Props) => {
           <a
             {...props}
             href={href}
+            dir="ltr"
             className="text-cyan-600 dark:text-cyan-400 underline underline-offset-4 hover:opacity-80 transition-opacity"
             target={isTelOrMail ? undefined : "_blank"}
             rel={isTelOrMail ? undefined : "noopener noreferrer"}
@@ -98,7 +97,7 @@ const MarkdownMessage = ({ content }: Props) => {
       ),
 
       strong: ({ children }) => (
-        <strong className="font-semibold text-zinc-950 dark:text-white">
+        <strong dir="ltr" className={`font-semibold text-zinc-950 dark:text-white `}>
           {children}
         </strong>
       ),
@@ -253,9 +252,15 @@ const MarkdownMessage = ({ content }: Props) => {
           : "text-left [direction:ltr]"
       }`}
     >
+      {/* 2. PLUG IN THE urlTransform PROP HERE */}
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={markdownComponents}
+        urlTransform={(url) =>
+          url.startsWith("tel:") || url.startsWith("mailto:")
+            ? url
+            : defaultUrlTransform(url)
+        }
       >
         {markdown}
       </ReactMarkdown>

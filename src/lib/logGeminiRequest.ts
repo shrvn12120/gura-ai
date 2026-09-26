@@ -3,6 +3,7 @@ import { db } from "./db";
 
 export async function logGeminiRequest({
   sessionId,
+  model,
   userMessage,
   assistantResponse,
   usage,
@@ -12,6 +13,7 @@ export async function logGeminiRequest({
   errorMessage,
 }: {
   sessionId: string;
+  model: string;
   userMessage: string;
   assistantResponse: string;
   usage: UsageStats;
@@ -53,7 +55,7 @@ export async function logGeminiRequest({
       `,
       [
         sessionId,
-        MODEL,
+        model,
         userMessage,
         assistantResponse || null,
         usage.inputTokens,

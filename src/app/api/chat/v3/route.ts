@@ -69,6 +69,7 @@ const typeSafeClient = new TypeSafeClient({
 type ChatRequest = {
   message: string;
   interactionId?: string | null;
+  intent: {intent:string,dateTime:string}
 };
 
 export type UsageStats = {
@@ -146,6 +147,7 @@ function extractUsage(interaction: any): UsageStats {
 
 async function safeLogConversation(params: {
   sessionId: string;
+  model: string,
   userMessage: string;
   assistantResponse: string;
   usage: UsageStats;
@@ -157,6 +159,7 @@ async function safeLogConversation(params: {
   try {
     await logGeminiRequest({
       sessionId: params.sessionId,
+      model: params.model,
       userMessage: params.userMessage,
       assistantResponse: params.assistantResponse,
       usage: params.usage,
@@ -428,7 +431,7 @@ export async function POST(req: NextRequest) {
       };
 
       try {
-        const routing = await routeWithJev(message);
+        const routing = body.intent === null? await routeWithJev(message):body.intent 
 
         let geminiInput = message;
         let dateTimeContext = "";
@@ -494,6 +497,7 @@ export async function POST(req: NextRequest) {
 
         safeLogConversation({
           sessionId,
+          model: "gemini",
           userMessage: message,
           assistantResponse: finalAssistantResponse,
           usage: totalUsage,
@@ -517,6 +521,7 @@ export async function POST(req: NextRequest) {
 
         safeLogConversation({
           sessionId,
+          model: "gemini",
           userMessage: message,
           assistantResponse: finalAssistantResponse,
           usage: totalUsage,

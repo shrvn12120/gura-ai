@@ -26,6 +26,7 @@ import {
   Anchor,
   Ship,
   MapPin,
+  CarTaxiFrontIcon,
 } from "lucide-react";
 
 import Image from "next/image";
@@ -48,6 +49,8 @@ import {
   saveInteractionId,
   type StoredMessage,
 } from "@/lib/chatStorage";
+import { RoutingResult } from "@/lib/jevUtils";
+
 
 
 /* =========================================================
@@ -96,7 +99,7 @@ const MessageRow = React.memo(
           </div>
         ) : (
           <div className="max-w-[95%] sm:max-w-[85%] space-y-2 pt-0.5 w-full">
-            <div className="text-sm dark:text-slate-200 text-teal-700 leading-relaxed font-normal p-4 rounded-2xl rounded-tl-xs shadow-sm">
+            <div  className="text-sm dark:text-slate-200 text-teal-700 leading-relaxed font-normal p-4 rounded-2xl rounded-tl-xs shadow-sm">
               {message.content ? (
                 <MarkdownMessage content={message.content} />
               ) : (
@@ -248,6 +251,11 @@ export default function ChatUi({
   const [copiedIndex, setCopiedIndex] =
     useState<number | null>(null);
 
+  const [intent, setIntent] =
+  useState<RoutingResult|null>(null)
+
+                     
+
   /*
    * Gemini Interactions API conversation ID.
    *
@@ -256,6 +264,10 @@ export default function ChatUi({
    */
   const [interactionId, setInteractionId] =
     useState<string | null>(null);
+  const [conversationId, setConversationId] =
+    useState<string | null>(null);
+
+  
 
   /* =======================================================
      REFS
@@ -513,19 +525,12 @@ export default function ChatUi({
      SEND MESSAGE
   ======================================================= */
 
-  const sendMessage = useCallback(
-    async function sendMessage(
-      customQuery?: string
-    ) {
-    const query = (
-      customQuery || input
-    ).trim();
+  
+const sendMessage = useCallback(
+  async function sendMessage(customQuery?: string, intention?:RoutingResult) {
+    const query = (customQuery || input).trim();
 
-    if (
-      !query ||
-      loading ||
-      historyLoading
-    ) {
+    if (!query || loading || historyLoading) {
       return;
     }
 
@@ -542,18 +547,9 @@ export default function ChatUi({
       createdAt: getTimestampMs(),
     };
 
-    /*
-     * Save immediately to localStorage.
-     */
     appendMessage(userMessage);
 
-    /*
-     * Update UI.
-     */
-    setMessages((prev) => [
-      ...prev,
-      userMessage,
-    ]);
+    setMessages((prev) => [...prev, userMessage]);
 
     /*
      * ================================================
@@ -561,8 +557,7 @@ export default function ChatUi({
      * ================================================
      */
 
-    const assistantMessageId =
-      createMessageId();
+    const assistantMessageId = createMessageId();
 
     const assistantPlaceholder: Message = {
       id: assistantMessageId,
@@ -571,57 +566,37 @@ export default function ChatUi({
       createdAt: getTimestampMs(),
     };
 
-    setMessages((prev) => [
-      ...prev,
-      assistantPlaceholder,
-    ]);
+    setMessages((prev) => [...prev, assistantPlaceholder]);
 
     setInput("");
     setLoading(true);
     setToolStatus(null);
 
     if (textareaRef.current) {
-      textareaRef.current.style.height =
-        "auto";
+      textareaRef.current.style.height = "auto";
     }
 
-    /*
-     * Accumulates the complete streamed
-     * assistant response.
-     */
     let fullResponseText = "";
     lastRenderedAssistantTextRef.current = "";
 
     const flushAssistantUpdate = () => {
-      if (
-        pendingAssistantUpdateRef.current !==
-        null
-      ) {
-        window.clearTimeout(
-          pendingAssistantUpdateRef.current
-        );
-        pendingAssistantUpdateRef.current =
-          null;
+      if (pendingAssistantUpdateRef.current !== null) {
+        window.clearTimeout(pendingAssistantUpdateRef.current);
+        pendingAssistantUpdateRef.current = null;
       }
 
-      if (
-        fullResponseText ===
-        lastRenderedAssistantTextRef.current
-      ) {
+      if (fullResponseText === lastRenderedAssistantTextRef.current) {
         return;
       }
 
-      lastRenderedAssistantTextRef.current =
-        fullResponseText;
+      lastRenderedAssistantTextRef.current = fullResponseText;
 
       setMessages((prev) =>
         prev.map((message) =>
-          message.id ===
-          assistantMessageId
+          message.id === assistantMessageId
             ? {
                 ...message,
-                content:
-                  fullResponseText,
+                content: fullResponseText,
               }
             : message
         )
@@ -629,24 +604,16 @@ export default function ChatUi({
     };
 
     const scheduleAssistantUpdate = () => {
-      if (
-        pendingAssistantUpdateRef.current
-      ) {
+      if (pendingAssistantUpdateRef.current) {
         return;
       }
 
-      pendingAssistantUpdateRef.current =
-        window.setTimeout(() => {
-          pendingAssistantUpdateRef.current =
-            null;
-          flushAssistantUpdate();
-        }, 120);
+      pendingAssistantUpdateRef.current = window.setTimeout(() => {
+        pendingAssistantUpdateRef.current = null;
+        flushAssistantUpdate();
+      }, 120);
     };
 
-    /*
-     * Track whether the response successfully
-     * completed.
-     */
     let completed = false;
 
     try {
@@ -654,56 +621,29 @@ export default function ChatUi({
          API REQUEST
       ================================================ */
 
-      const res = await fetch(
-        "/api/chat/v3",
-        {
-          method: "POST",
-
-          credentials: "include",
-
-          headers: {
-            "Content-Type":
-              "application/json",
-
-            Accept:
-              "application/x-ndjson",
-          },
-
-          /*
-           * IMPORTANT:
-           *
-           * sessionId is NO LONGER sent.
-           *
-           * The server reads session_id
-           * from the HttpOnly cookie.
-           *
-           * We only send the Gemini
-           * interaction ID.
-           */
-          body: JSON.stringify({
-            message: query,
-            interactionId,
-          }),
-        }
-      );
+      const res = await fetch("/api/chat/v4", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/x-ndjson",
+        },
+        body: JSON.stringify({
+          message: query,
+          intent: intention?intention:intent,
+          interactionId: interactionId,
+          conversationId: conversationId,
+        }),
+      });
 
       /* ================================================
          HTTP ERROR
       ================================================ */
 
       if (!res.ok) {
-        const errorText =
-          await res.text();
-
-        console.error(
-          "API ERROR:",
-          res.status,
-          errorText
-        );
-
-        throw new Error(
-          `API request failed: ${res.status}`
-        );
+        const errorText = await res.text();
+        console.error("API ERROR:", res.status, errorText);
+        throw new Error(`API request failed: ${res.status}`);
       }
 
       /* ================================================
@@ -711,61 +651,38 @@ export default function ChatUi({
       ================================================ */
 
       if (!res.body) {
-        throw new Error(
-          "No readable data stream available"
-        );
+        throw new Error("No readable data stream available");
       }
 
-      const reader =
-        res.body.getReader();
-
-      const decoder =
-        new TextDecoder(
-          "utf-8"
-        );
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder("utf-8");
 
       let buffer = "";
 
-      /*
-       * ==============================================
-       * PROCESS NDJSON LINE
-       * ==============================================
-       */
+      /* ==============================================
+         PROCESS NDJSON LINE
+      ============================================== */
 
-      const processLine = (
-        line: string
-      ) => {
-        const trimmed =
-          line.trim();
+      const processLine = (line: string) => {
+        const trimmed = line.trim();
 
         if (!trimmed) {
           return;
         }
 
         let event: {
-        type?: string;
-        delta?: string;
-        tool?: string;
-        message?: string;
-        interactionId?: string;
-      };
+          type?: string;
+          delta?: string;
+          tool?: string;
+          message?: string;
+          interactionId?: string;
+          conversationId?: string;
+        };
 
         try {
-          event =
-            JSON.parse(trimmed) as {
-              type?: string;
-              delta?: string;
-              tool?: string;
-              message?: string;
-              interactionId?: string;
-            };
+          event = JSON.parse(trimmed);
         } catch (error) {
-          console.error(
-            "Failed to parse NDJSON line:",
-            trimmed,
-            error
-          );
-
+          console.error("Failed to parse NDJSON line:", trimmed, error);
           return;
         }
 
@@ -773,15 +690,9 @@ export default function ChatUi({
            TEXT
         ============================================== */
 
-        if (
-          event.type === "text" &&
-          typeof event.delta ===
-            "string"
-        ) {
-          fullResponseText +=
-            event.delta;
+        if (event.type === "text" && typeof event.delta === "string") {
+          fullResponseText += event.delta;
           scheduleAssistantUpdate();
-
           return;
         }
 
@@ -789,23 +700,8 @@ export default function ChatUi({
            TOOL START
         ============================================== */
 
-        if (
-          event.type ===
-          "tool_start"
-        ) {
-          if (
-            event.tool ===
-            "search_guraidhoo"
-          ) {
-            setToolStatus(
-              "Searching Guraidhoo guides..."
-            );
-          } else {
-            setToolStatus(
-              "Looking up local info..."
-            );
-          }
-
+        if (event.type === "tool_start") {
+            setToolStatus("Looking up local info...");
           return;
         }
 
@@ -813,10 +709,7 @@ export default function ChatUi({
            TOOL END
         ============================================== */
 
-        if (
-          event.type ===
-          "tool_end"
-        ) {
+        if (event.type === "tool_end") {
           setToolStatus(null);
           return;
         }
@@ -825,59 +718,42 @@ export default function ChatUi({
            DONE
         ============================================== */
 
-        if (
-          event.type === "done"
-        ) {
+        if (event.type === "done") {
           setToolStatus(null);
 
           flushAssistantUpdate();
 
-          /*
-           * Save the Gemini interaction ID.
-           *
-           * This is what allows the NEXT request
-           * to continue the same Gemini conversation.
-           */
+          let latestInteractionId = interactionId;
+          let latestConversationId = conversationId;
+
           if (
-            typeof event.interactionId ===
-              "string" &&
+            typeof event.interactionId === "string" &&
             event.interactionId
           ) {
-            setInteractionId(
-              event.interactionId
-            );
-
-            saveInteractionId(
-              event.interactionId
-            );
+            latestInteractionId = event.interactionId;
+            setInteractionId(event.interactionId);
           }
 
-          /*
-           * Save the completed assistant
-           * response to localStorage.
-           *
-           * We only do this ONCE after streaming
-           * has finished.
-           */
           if (
-            fullResponseText.trim()
+            typeof event.conversationId === "string" &&
+            event.conversationId
           ) {
+            latestConversationId = event.conversationId;
+            setConversationId(event.conversationId);
+          }
+
+          saveInteractionId(latestInteractionId, latestConversationId);
+
+          if (fullResponseText.trim()) {
             appendMessage({
               id: assistantMessageId,
-
               role: "assistant",
-
-              content:
-                formatStreamedMarkdown(
-                  fullResponseText
-                ),
-
+              content: formatStreamedMarkdown(fullResponseText),
               createdAt: getTimestampMs(),
             });
           }
 
           completed = true;
-
           return;
         }
 
@@ -885,31 +761,13 @@ export default function ChatUi({
            ERROR
         ============================================== */
 
-        if (
-          event.type ===
-          "error"
-        ) {
-          /*
-           * Your new API sends:
-           *
-           * {
-           *   type: "error",
-           *   message: "..."
-           * }
-           *
-           * NOT:
-           *
-           * event.error.message
-           */
+        if (event.type === "error") {
           const errorMessage =
-            typeof event.message ===
-            "string"
+            typeof event.message === "string"
               ? event.message
               : "AI streaming error";
 
-          throw new Error(
-            errorMessage
-          );
+          throw new Error(errorMessage);
         }
       };
 
@@ -918,32 +776,18 @@ export default function ChatUi({
       ================================================ */
 
       while (true) {
-        const {
-          value,
-          done,
-        } = await reader.read();
+        const { value, done } = await reader.read();
 
         if (done) {
           break;
         }
 
-        buffer +=
-          decoder.decode(
-            value,
-            {
-              stream: true,
-            }
-          );
+        buffer += decoder.decode(value, { stream: true });
 
-        const lines =
-          buffer.split("\n");
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
 
-        buffer =
-          lines.pop() ?? "";
-
-        for (
-          const line of lines
-        ) {
+        for (const line of lines) {
           processLine(line);
         }
       }
@@ -958,71 +802,53 @@ export default function ChatUi({
         processLine(buffer);
       }
 
-      /*
-       * If the stream ended without receiving
-       * a done event, treat it as an error.
-       */
       if (!completed) {
-        throw new Error(
-          "AI response ended unexpectedly."
-        );
+        throw new Error("AI response ended unexpectedly.");
       }
     } catch (error) {
-      console.error(
-        "Chat Error:",
-        error
-      );
+      console.error("Chat Error:", error);
 
-      if (
-        pendingAssistantUpdateRef.current !==
-        null
-      ) {
-        window.clearTimeout(
-          pendingAssistantUpdateRef.current
-        );
-        pendingAssistantUpdateRef.current =
-          null;
+      if (pendingAssistantUpdateRef.current !== null) {
+        window.clearTimeout(pendingAssistantUpdateRef.current);
+        pendingAssistantUpdateRef.current = null;
       }
-
-      /*
-       * Don't save a failed assistant
-       * response to localStorage.
-       */
 
       const fallbackMessage =
         "Something went wrong while connecting to the island AI. Please try again.";
 
-      setMessages(
-        (prev) =>
-          prev.map(
-            (message) =>
-              message.id ===
-              assistantMessageId
-                ? {
-                    ...message,
-                    content:
-                      fallbackMessage,
-                  }
-                : message
-          )
+      setMessages((prev) =>
+        prev.map((message) =>
+          message.id === assistantMessageId
+            ? {
+                ...message,
+                content: fallbackMessage,
+              }
+            : message
+        )
       );
     } finally {
-      if (
-        pendingAssistantUpdateRef.current !==
-        null
-      ) {
-        window.clearTimeout(
-          pendingAssistantUpdateRef.current
-        );
-        pendingAssistantUpdateRef.current =
-          null;
+      if (pendingAssistantUpdateRef.current !== null) {
+        window.clearTimeout(pendingAssistantUpdateRef.current);
+        pendingAssistantUpdateRef.current = null;
       }
 
       setLoading(false);
       setToolStatus(null);
     }
-  }, [input, loading, historyLoading, interactionId]);
-
+  },
+  [
+    input,
+    loading,
+    historyLoading,
+    intent,
+    interactionId,
+    conversationId,
+    appendMessage,
+    saveInteractionId,
+    setInteractionId,
+    setConversationId,
+  ]
+);
   /* =======================================================
      COPY
   ======================================================= */
@@ -1143,25 +969,57 @@ export default function ChatUi({
   /* =======================================================
      INPUT
   ======================================================= */
+  const intentionTimeout = useRef<NodeJS.Timeout | null>(null);
 
-  function handleInput(
-    e: React.ChangeEvent<HTMLTextAreaElement>
-  ) {
-    setInput(
-      e.target.value
-    );
+ 
+  async function handleInput(
+  e: React.ChangeEvent<HTMLTextAreaElement>
+) {
+  const value = e.target.value;
 
-    const target =
-      e.target;
 
-    target.style.height =
-      "auto";
+  setInput(value);
 
-    target.style.height = `${Math.min(
-      target.scrollHeight,
-      128
-    )}px`;
+  const target = e.target;
+
+  target.style.height = "auto";
+  target.style.height = `${Math.min(target.scrollHeight, 128)}px`;
+
+  if (intentionTimeout.current) {
+    clearTimeout(intentionTimeout.current);
   }
+
+  if (value.trim().length < 3) {
+    return;
+  }
+
+  intentionTimeout.current = setTimeout(async () => {
+    try {
+      const response = await fetch("/api/i", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: value,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Intent API failed: ${response.status}`);
+      }
+
+      const intention = await response.json();
+       setIntent(intention)
+
+
+    } catch (error) {
+      console.error("Intent detection error:", error);
+    }
+  }, 200);
+     
+}
+
 
   /* =======================================================
      RENDER
@@ -1243,7 +1101,7 @@ export default function ChatUi({
 
                 <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
 
-                Pre-release v1.0.0-beta.5
+                Pre-release v1.0.0-beta.6
 
               </p>
             )}
@@ -1278,7 +1136,7 @@ export default function ChatUi({
           New Chat
 
         </Button>
-
+      
       </header>
 
       {/* =================================================
@@ -1350,9 +1208,9 @@ export default function ChatUi({
                   {
                     icon: Ship,
                     title:
-                      "Speedboat Timings",
+                      "Speedboat Timings & Schedules",
                     desc:
-                      "Schedules to & from Malé",
+                      "Speedboat Timings & Schedules",
                   },
                   {
                     icon: MapPin,
@@ -1375,6 +1233,13 @@ export default function ChatUi({
                     desc:
                       "Find local stays",
                   },
+                  {
+                    icon: CarTaxiFrontIcon,
+                    title:
+                      "Can i get a buggy?",
+                    desc:
+                      "Find local stays",
+                  }
                 ].map(
                   (
                     item,
@@ -1383,11 +1248,15 @@ export default function ChatUi({
 
                     <button
                       key={idx}
-                      onClick={() =>
-                        sendMessage(
-                          item.title
-                        )
-                      }
+                      onClick={(()=>  sendMessage(
+                          item.title,
+                          {
+                          intent: "knowledge",
+                          dateTime: "required",
+                          lang: "major"
+                        }
+                        ))}
+                      
                       className="flex items-start gap-3 p-3.5 rounded-2xl bg-slate-100/80 hover:bg-slate-200/80 border border-slate-200 hover:border-teal-500/30 text-left transition-all group dark:bg-slate-900/60 dark:hover:bg-slate-800/80 dark:border-slate-800/80"
                     >
 

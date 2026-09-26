@@ -11,6 +11,7 @@ export type StoredMessage = {
 
 type ChatStorageState = {
   messages: StoredMessage[];
+  conversationId: string | null;
   interactionId: string | null;
 };
 
@@ -20,6 +21,7 @@ const MAX_MESSAGES = 30;
 function emptyState(): ChatStorageState {
   return {
     messages: [],
+    conversationId: null,
     interactionId: null,
   };
 }
@@ -55,6 +57,11 @@ export function getChatState(): ChatStorageState {
         )
       : [];
 
+    const conversationId =
+      typeof parsed.conversationId === "string"
+        ? parsed.conversationId
+        : null;
+
     const interactionId =
       typeof parsed.interactionId === "string"
         ? parsed.interactionId
@@ -62,6 +69,7 @@ export function getChatState(): ChatStorageState {
 
     return {
       messages,
+      conversationId,
       interactionId,
     };
   } catch (error) {
@@ -85,7 +93,8 @@ export function saveChatState(state: ChatStorageState): void {
       STORAGE_KEY,
       JSON.stringify({
         messages: trimmedMessages,
-        interactionId: state.interactionId,
+        conversationId: state.conversationId ?? null,
+        interactionId: state.interactionId ?? null,
       })
     );
   } catch (error) {
@@ -101,13 +110,14 @@ export function getConversation(): StoredMessage[] {
 }
 
 /**
- * Save only messages while preserving the existing interaction ID.
+ * Save only messages while preserving the existing IDs.
  */
 export function saveConversation(messages: StoredMessage[]): void {
   const state = getChatState();
 
   saveChatState({
     messages,
+    conversationId: state.conversationId,
     interactionId: state.interactionId,
   });
 }
@@ -120,18 +130,40 @@ export function appendMessage(message: StoredMessage): void {
 
   saveChatState({
     messages: [...state.messages, message],
+    conversationId: state.conversationId,
     interactionId: state.interactionId,
   });
 }
 
 /**
- * Set the Gemini Interactions API conversation ID.
+ * Set the OpenAI conversation ID.
  */
-export function saveInteractionId(interactionId: string | null): void {
+export function saveConversationId(conversationId: string | null): void {
   const state = getChatState();
 
   saveChatState({
     messages: state.messages,
+    conversationId,
+    interactionId: state.interactionId,
+  });
+}
+
+/**
+ * Get OpenAI conversation ID.
+ */
+export function getConversationId(): string | null {
+  return getChatState().conversationId;
+}
+
+/**
+ * Set the Gemini interaction ID.
+ */
+export function saveInteractionId(interactionId: string | null, conversationId: string | null,): void {
+  const state = getChatState();
+
+  saveChatState({
+    messages: state.messages,
+    conversationId: conversationId,
     interactionId,
   });
 }
@@ -170,4 +202,30 @@ export function createMessageId(): string {
   }
 
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+export function saveConversationIds(params: {
+  conversationId?: string | null;
+  interactionId?: string | null;
+}) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    const state = getChatState();
+
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        messages: state.messages.slice(-MAX_MESSAGES),
+        conversationId:
+          params.conversationId ?? state.conversationId ?? null,
+        interactionId:
+          params.interactionId ?? state.interactionId ?? null,
+      }),
+    );
+  } catch (error) {
+    console.error("Failed to persist conversation IDs:", error);
+  }
 }
