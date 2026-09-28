@@ -1,4 +1,3 @@
-"use server"
 "use server";
 
 import OpenAI from "openai";
